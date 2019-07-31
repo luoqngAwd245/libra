@@ -8,6 +8,7 @@ use executable_helpers::helpers::{
 
 /// Run a Admission Control service in its own process.
 /// It will also setup global logger and initialize config.
+/// 运行AC服务在它自己的进程中，它还将设置全局记录器并初始化配置。
 fn main() {
     let (config, _logger, _args) = setup_executable(
         "Libra AdmissionControl node".to_string(),
