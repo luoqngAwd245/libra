@@ -11,15 +11,16 @@ import "transaction.proto";
 import "vm_errors.proto";
 
 // -----------------------------------------------------------------------------
-// ---------------- Submit transaction
+// ---------------- Submit transaction 提交交易
 // -----------------------------------------------------------------------------
-// The request for transaction submission.
+// The request for transaction submission. 提交交易請求
 message SubmitTransactionRequest {
-  // Transaction signed by wallet.
+  // Transaction signed by wallet. 錢包簽名的交易
   types.SignedTransaction signed_txn = 1;
 }
 
 // AC response status containing code and optionally an error message.
+// Ac 响应状态 包含编码 和可选的错误信息
 message AdmissionControlStatus {
   AdmissionControlStatusCode code = 1;
   string message = 2;
@@ -27,16 +28,17 @@ message AdmissionControlStatus {
 
 // Additional statuses that are possible from admission control in addition
 // to VM statuses.
+// 除VM状态外，还可以从AC中获得其他状态。
 enum AdmissionControlStatusCode {
-  // Validator accepted the transaction.
+  // Validator accepted the transaction. 验证节点接收交易状态
   Accepted = 0;
-  // The sender is blacklisted.
+  // The sender is blacklisted. 发送节点进入黑名单
   Blacklisted = 1;
-  // The transaction is rejected, e.g. due to incorrect signature.
+  // The transaction is rejected, e.g. due to incorrect signature. 交易被拒绝，比如由于错误的签名
   Rejected = 2;
 }
 
-// The response for transaction submission.
+// The response for transaction submission. 交易提交的响应
 //
 // How does a client know if their transaction was included?
 // A response from the transaction submission only means that the transaction
@@ -51,23 +53,35 @@ enum AdmissionControlStatusCode {
 // ledgerInfo that I receive back from the query.  If this time is greater than
 // T0, I can be certain that my transaction will never be included.  If this
 // time is less than T0, I need to continue polling.
+//客户端怎样知道他们的交易是否被包含。 一个来自交易提交的响应仅仅意味着此交易被成功的加入了内存池，并
+//无法保证交易被加入区块链。在签名中，每一比交易应该包含一个过期时间。我们姑且称它为 T0. 作为一个客户端，
+// 我提交我的交易到验证节点。 我需要轮询我提交的这笔交易。 我可以使用账号和序列号查询。如果我接收到一个
+//这笔交易已经完成的返回，我会检验proofs 来确认 这笔交易是我所期望的那样。如果我接收到一个我的交易尚未
+//完成的回应，我必须从查询中收到的账目信息中检查最新的时间戳。如果时间大于T0, 我可以肯定我的交易将永远
+//不会被包含。否则，我将继续轮询。
 message SubmitTransactionResponse {
   // The status of a transaction submission can either be a VM status, or
   // some other admission control/mempool specific status e.g. Blacklisted.
+  // 交易提交状态既可能是 VM 状态，也可能是其他 AC/mempool 定义的状态比如：黑名单
+  //如果你的消息中有很多可选字段， 并且同时至多一个字段会被设置， 你可以加强这个行为，使用oneof特性节省内存.
   oneof status {
     types.VMStatus vm_status = 1;
     AdmissionControlStatus ac_status = 2;
     mempool.MempoolAddTransactionStatus mempool_status = 3;
   }
   // Public key(id) of the validator that processed this transaction
+  // 处理这笔交易的验证者的公钥
   bytes validator_id = 4;
 }
 
 // -----------------------------------------------------------------------------
-// ---------------- Service definition
+// ---------------- Service definition 服务定义
 // -----------------------------------------------------------------------------
+//如果想要将消息类型用在RPC(远程方法调用)系统中，可以在.proto文件中定义一个RPC服务接口，protocol
+//buffer编译器将会根据所选择的不同语言生成服务接口代码及存根。
 service AdmissionControl {
   // Public API to submit transaction to a validator.
+   //用于提交交易到验证者的公开API
   rpc SubmitTransaction(SubmitTransactionRequest)
       returns (SubmitTransactionResponse) {}
 
@@ -77,6 +91,9 @@ service AdmissionControl {
   // the data. Note that if a client only wishes to update to the latest
   // LedgerInfo and receive the proof of this latest version, they can simply
   // omit the requested_items (or pass an empty list)
+  // 下面这个API用来更新客户端到最新的总账版本和 1..n 个数据片的可选请求。这个API允许
+  // 批量请求。所有查询都返回客户端应检查以验证数据的证据。注意 如果一个客户端期望更新
+  // 到最新的账本信息并且接收最新的版本的证据，他们可以简单的忽略请求项（或者传一个空的列表）
   rpc UpdateToLatestLedger(
       types.UpdateToLatestLedgerRequest)
       returns (types.UpdateToLatestLedgerResponse) {}
