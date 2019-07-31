@@ -23,6 +23,8 @@ use types::{
 
 /// Basic communication with the Execution module;
 /// implements StateComputer traits.
+/// 与执行模块的基本通信;
+/// 实现StateComputer特征。
 pub struct ExecutionProxy {
     execution: Arc<ExecutionClient>,
     synchronizer: Arc<StateSynchronizer>,
@@ -46,6 +48,7 @@ impl ExecutionProxy {
         let num_txns = execution_block_response.status().len();
         if num_txns == 0 {
             // no txns in that block
+            // 块中没有交易
             counters::EMPTY_BLOCK_EXECUTION_DURATION_MS.observe(execution_duration_ms as f64);
         } else {
             counters::BLOCK_EXECUTION_DURATION_MS.observe(execution_duration_ms as f64);
@@ -80,10 +83,13 @@ impl StateComputer for ExecutionProxy {
     fn compute(
         &self,
         // The id of a parent block, on top of which the given transactions should be executed.
+        // 父块的id，应在其上执行给定的事务。
         parent_block_id: HashValue,
         // The id of a current block.
+        // 当前块的id。
         block_id: HashValue,
         // Transactions to execute.
+        // 要执行的事务。
         transactions: &Self::Payload,
     ) -> Pin<Box<dyn Future<Output = Result<StateComputeResult>> + Send>> {
         let mut exec_req = ExecuteBlockRequest::new();
@@ -116,6 +122,7 @@ impl StateComputer for ExecutionProxy {
     }
 
     /// Send a successful commit. A future is fulfilled when the state is finalized.
+    /// 发送成功提交。 当状态最终确定时，future就会实现
     fn commit(
         &self,
         commit: LedgerInfoWithSignatures,
@@ -154,6 +161,7 @@ impl StateComputer for ExecutionProxy {
     }
 
     /// Synchronize to a commit that not present locally.
+    /// 同步到本地不存在的提交。
     fn sync_to(
         &self,
         commit: QuorumCert,
