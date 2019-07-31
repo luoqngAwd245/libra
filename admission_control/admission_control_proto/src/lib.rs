@@ -10,16 +10,17 @@ use proto_conv::{FromProto, IntoProto};
 use types::vm_error::VMStatus;
 
 /// AC response status of submit_transaction to clients.
+// AC 对客户端提交交易的响应
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AdmissionControlStatus {
-    /// Validator accepted the transaction.
+    /// Validator accepted the transaction. 验证节点的接收交易
     Accepted,
-    /// The sender is blacklisted.
+    /// The sender is blacklisted. 发送节点进入黑名单
     Blacklisted(String),
-    /// The transaction is rejected, e.g. due to incorrect signature.
+    /// The transaction is rejected, e.g. due to incorrect signature. 交易被拒绝，比如由于错误的签名
     Rejected(String),
 }
-
+//实现由rust到proto的转换（编码）
 impl IntoProto for AdmissionControlStatus {
     type ProtoType = crate::proto::admission_control::AdmissionControlStatus;
 
@@ -42,7 +43,7 @@ impl IntoProto for AdmissionControlStatus {
         admission_control_status
     }
 }
-
+//从proto到rust（解码）
 impl FromProto for AdmissionControlStatus {
     type ProtoType = crate::proto::admission_control::AdmissionControlStatus;
 
@@ -64,18 +65,23 @@ impl FromProto for AdmissionControlStatus {
 }
 
 /// Rust structure for SubmitTransactionResponse protobuf definition.
+/// rust结构对应SubmitTransactionResponse 的protobuf 定义
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubmitTransactionResponse {
     /// AC status returned to client if any - it can be one of: accepted, blacklisted, or rejected.
+    /// AC 状态返回给客户端，可能是 accepted, blacklisted, or rejected 中的任意一个
     pub ac_status: Option<AdmissionControlStatus>,
     /// Mempool error status if any.
+    /// 内存池错误状态
     pub mempool_error: Option<MempoolAddTransactionStatus>,
     /// VM error status if any.
+    /// VM错误状态
     pub vm_error: Option<VMStatus>,
     /// The id of validator associated with this AC.
+    /// 与此AC关联的验证者的ID。
     pub validator_id: Vec<u8>,
 }
-
+///编码
 impl IntoProto for SubmitTransactionResponse {
     type ProtoType = crate::proto::admission_control::SubmitTransactionResponse;
 
@@ -94,7 +100,7 @@ impl IntoProto for SubmitTransactionResponse {
         proto
     }
 }
-
+/// 解码
 impl FromProto for SubmitTransactionResponse {
     type ProtoType = crate::proto::admission_control::SubmitTransactionResponse;
 
