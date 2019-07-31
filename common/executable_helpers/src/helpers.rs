@@ -6,12 +6,12 @@ use config::config::{NodeConfig, NodeConfigHelpers};
 use logger::prelude::*;
 use slog_scope::GlobalLoggerGuard;
 
-// General args
+// General args 常规参数
 pub const ARG_PEER_ID: &str = "--peer_id";
 pub const ARG_DISABLE_LOGGING: &str = "--no_logging";
 pub const ARG_CONFIG_PATH: &str = "--config_path";
 
-// Used for consensus
+// Used for consensus 用于一致性
 pub const ARG_NUM_PAYLOAD: &str = "--num_payload";
 pub const ARG_PAYLOAD_SIZE: &str = "--payload_size";
 
@@ -65,6 +65,7 @@ pub fn setup_metrics(peer_id: &str, node_config: &NodeConfig) {
 
 /// Performs common setup for the executable.  Takes in args that
 /// you wish to use for this executable
+/// 执行可执行文件的常见设置。 接受您希望用于此可执行文件的参数
 pub fn setup_executable(
     app_name: String,
     arg_names: Vec<&str>,
