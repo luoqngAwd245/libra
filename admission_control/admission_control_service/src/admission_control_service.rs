@@ -4,6 +4,8 @@
 //! Admission Control (AC) is a module acting as the only public end point. It receives api requests
 //! from external clients (such as wallets) and performs necessary processing before sending them to
 //! next step.
+//! 准入控制（AC）是作为唯一公开端点的模块。它接收API的请求从外部客户端（比如钱包）并执行必要的处理
+//! 在发送他们到下一步之前
 
 use crate::OP_COUNTERS;
 use admission_control_proto::{
@@ -41,16 +43,21 @@ use vm_validator::vm_validator::{get_account_state, TransactionValidation};
 mod admission_control_service_test;
 
 /// Struct implementing trait (service handle) AdmissionControlService.
+/// 结构体实现 trait（服务处理）AdmissionControlService
 #[derive(Clone)]
 pub struct AdmissionControlService<M, V> {
     /// gRPC client connecting Mempool.
+    /// gRPC 客户端连接内存池
     mempool_client: Arc<M>,
     /// gRPC client to send read requests to Storage.
+    /// gRPC 客户端 用来发送 读取请求到Storage
     storage_read_client: Arc<dyn StorageRead>,
     /// VM validator instance to validate transactions sent from wallets.
+    /// 用来验证来自钱包的交易的VM 验证者实例
     vm_validator: Arc<V>,
     /// Flag indicating whether we need to check mempool before validation, drop txn if check
     /// fails.
+    /// 标志位暗示我们是否需要检查内存池在验证之前，如果验证失败销毁txn
     need_to_check_mempool_before_validation: bool,
 }
 
@@ -60,6 +67,7 @@ where
     V: TransactionValidation,
 {
     /// Constructs a new AdmissionControlService instance.
+    /// 构造一个AC服务实例
     pub fn new(
         mempool_client: Arc<M>,
         storage_read_client: Arc<dyn StorageRead>,
@@ -75,12 +83,14 @@ where
     }
 
     /// Validate transaction signature, then via VM, and add it to Mempool if it passes VM check.
+    /// 验证交易签名，然后通过VM 加入到内存池前提是通过VM验证
     pub(crate) fn submit_transaction_inner(
         &self,
         req: SubmitTransactionRequest,
     ) -> Result<SubmitTransactionResponse> {
         // Drop requests first if mempool is full (validator is lagging behind) so not to consume
         // unnecessary resources.
+        //如果mempool已满，请先删除请求(验证器落后了),所以不会消费不必要的资源
         if !self.can_send_txn_to_mempool()? {
             debug!("Mempool is full");
             OP_COUNTERS.inc_by("submit_txn.rejected.mempool_full", 1);
@@ -143,7 +153,7 @@ where
             add_transaction_request.set_account_balance(balance);
             add_transaction_request.set_latest_sequence_number(sequence_number);
         }
-
+        //添加交易到内存池
         self.add_txn_to_mempool(add_transaction_request)
     }
 
@@ -157,6 +167,7 @@ where
     }
 
     /// Add signed transaction to mempool once it passes vm check
+    /// 一旦交易通过VM验证，添加签名交易到内存池
     fn add_txn_to_mempool(
         &self,
         add_transaction_request: AddTransactionWithValidationRequest,
@@ -183,6 +194,7 @@ where
     }
 
     /// Pass the UpdateToLatestLedgerRequest to Storage for read query.
+    /// 传递UpdateToLatestLedgerRequest到存储以备查询
     fn update_to_latest_ledger_inner(
         &self,
         req: UpdateToLatestLedgerRequest,
@@ -208,6 +220,7 @@ where
     /// Submit a transaction to the validator this AC instance connecting to.
     /// The specific transaction will be first validated by VM and then passed
     /// to Mempool for further processing.
+    /// 提交交易到本AC实例连接的验证者。特定交易首先被VM验证然后传递给内存池用来进一步处理
     fn submit_transaction(
         &mut self,
         ctx: ::grpcio::RpcContext<'_>,
@@ -226,6 +239,10 @@ where
     /// Note that if a client only wishes to update to the latest LedgerInfo and receive the proof
     /// of this latest version, they can simply omit the requested_items (or pass an empty list).
     /// AC will not directly process this request but pass it to Storage instead.
+    /// 下面这个API用来更新客户端到最新的总账版本和 1..n 个数据片的可选请求。这个API允许
+    ///批量请求。所有查询都返回客户端应检查以验证数据的证据。注意 如果一个客户端期望更新
+    ///到最新的账本信息并且接收最新的版本的证据，他们可以简单的忽略请求项（或者传一个空的列表）。
+    ///AC不会直接处理这个请求而是传递给DB
     fn update_to_latest_ledger(
         &mut self,
         ctx: grpcio::RpcContext<'_>,
