@@ -19,6 +19,7 @@ use std::{pin::Pin, sync::Arc};
 use types::transaction::SignedTransaction;
 
 /// Proxy interface to mempool
+/// mempool的代理接口
 pub struct MempoolProxy {
     mempool: Arc<MempoolClient>,
 }
@@ -31,6 +32,7 @@ impl MempoolProxy {
     }
 
     /// Generate mempool commit transactions request given the set of txns and their status
+    /// 给定一组txns及其状态，生成mempool提交事务请求
     fn gen_commit_transactions_request(
         txns: &[SignedTransaction],
         compute_result: &StateComputeResult,
@@ -58,6 +60,7 @@ impl MempoolProxy {
     }
 
     /// Submit the request and return the future, which is fulfilled when the response is received.
+    /// 提交请求并返回未来，这将在收到回复时完成。
     fn submit_commit_transactions_request(
         &self,
         req: CommitTransactionsRequest,
@@ -79,6 +82,7 @@ impl TxnManager for MempoolProxy {
     type Payload = Vec<SignedTransaction>;
 
     /// The returned future is fulfilled with the vector of SignedTransactions
+     /// 使用SignedTransactions的向量来实现返回的future
     fn pull_txns(
         &self,
         max_size: u64,
