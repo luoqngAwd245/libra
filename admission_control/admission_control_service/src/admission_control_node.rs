@@ -16,8 +16,10 @@ use vm_validator::vm_validator::VMValidator;
 
 /// Struct to run Admission Control service in a dedicated process. It will be used to spin up
 /// extra AC instances to talk to the same validator.
+/// 结构体跑AC 服务在一个专用进程。他被用来旋转一个额外的AC实例用来和相同的验证者通信
 pub struct AdmissionControlNode {
     /// Config used to setup environment for this Admission Control service instance.
+    /// 用来为AC服务实例建立环境的配置
     node_config: NodeConfig,
 }
 
@@ -29,11 +31,13 @@ impl Drop for AdmissionControlNode {
 
 impl AdmissionControlNode {
     /// Construct a new AdmissionControlNode instance using NodeConfig.
+     /// 用节点配置构建一个AC节点的实例
     pub fn new(node_config: NodeConfig) -> Self {
         AdmissionControlNode { node_config }
     }
 
     /// Setup environment and start a new Admission Control service.
+    /// 建立环境变量 并启动一个新的AC服务
     pub fn run(&self) -> Result<()> {
         logger::set_global_log_collector(
             self.node_config
@@ -45,6 +49,7 @@ impl AdmissionControlNode {
         );
         info!("Starting AdmissionControl node",);
         // Start receiving requests
+        // 启动接收请求
         let client_env = Arc::new(EnvBuilder::new().name_prefix("grpc-ac-mem-").build());
         let mempool_connection_str = format!(
             "{}:{}",
@@ -67,6 +72,8 @@ impl AdmissionControlNode {
     /// This method will start a node using the provided clients to external services.
     /// For now, mempool is a mandatory argument, and storage is Option. If it doesn't exist,
     /// it'll be generated before starting the node.
+    /// 此方法将使用提供的客户端启动节点到外部服务。目前，mempool是必需参数，存储是可選的。
+    /// 如果不存在，在节点启动之前生成。
     pub fn run_with_clients<M: MempoolClientTrait + 'static>(
         &self,
         env: Arc<Environment>,
