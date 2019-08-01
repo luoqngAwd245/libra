@@ -41,6 +41,7 @@ pub mod block_test;
 #[derive(Debug)]
 pub enum BlockVerificationError {
     /// The verification of quorum cert of this block failed.
+     /// 验证此块的仲裁证书失败。
     QCVerificationError(VoteMsgVerificationError),
     /// The signature verification of this block failed.
     SigVerifyError,
@@ -48,18 +49,25 @@ pub enum BlockVerificationError {
 
 /// Blocks are managed in a speculative tree, the committed blocks form a chain.
 /// Each block must know the id of its parent and keep the QuorurmCertificate to that parent.
+/// 块在推测树中管理，提交的块形成链。
+/// 每个块必须知道其父级的id，并将QuorurmCertificate保留给该父级。
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct Block<T> {
     /// This block's id as a hash value
+    /// 此块的id为哈希值
     id: HashValue,
     /// Parent block id of this block as a hash value (all zeros to indicate the genesis block)
+    /// 此块的父块id作为哈希值（全部为零以指示创建块）
     parent_id: HashValue,
     /// T of the block (e.g. one or more transaction(s)
+    /// 块的T（例如一个或多个交易）
     payload: T,
     /// The round of a block is an internal monotonically increasing counter used by Consensus
     /// protocol.
+    /// 块的一轮是Consensus协议使用的内部单调递增计数器。
     round: Round,
     /// The height of a block is its position in the chain (block height = parent block height + 1)
+    /// 块的高度是它在链中的位置（块高=父块高+ 1）
     height: Height,
     /// The approximate physical time a block is proposed by a proposer.  This timestamp is used
     /// for
@@ -78,13 +86,28 @@ pub struct Block<T> {
     ///    voted for B unless its clock was between 3:00 PM to 3:10 PM at the time the
     ///    proposal was received.  After 3:10 PM, an honest replica would no longer vote
     ///    on B, noting it was too far in the past.
+    ///  提议者提出块的近似物理时间。此时间戳用于
+    /// *智能合约中与时间相关的逻辑（当前执行时间）
+    /// *客户确定他们是否相对于区块链是最新的。
+    ///
+    ///
+    /// 它做出以下保证：
+    /// 1.时间单调性：时间在区块链中单调增加。 （即如果H1 <H2，则H1.Time <H2.Time）。
+    /// 2.如果事务块B与时间戳T达成一致，那么至少f + 1个诚实复制品认为T是过去的。一个诚实的副本只会在自己的时钟
+    /// > =时间戳T时对一个块进行投票。
+    /// 3.如果事务块B与时间戳T达成一致，则至少f + 1个诚实副本看到B的内容不晚于某些增量的T + delta。
+    /// 如果T = 3:00 PM且delta为10分钟，那么诚实的副本将不会投票给B，除非它的时钟是在收到提案时的下午3:00到3:10之间。在下午3点10
+    /// 分之后，一个诚实的复制品将不再投票给B，注意它在过去太过分了。
     timestamp_usecs: u64,
     /// Contains the quorum certified ancestor and whether the quorum certified ancestor was
     /// voted on successfully
+     /// 包含法定人数认证的祖先以及法定人数认证的祖先是否成功投票
     quorum_cert: QuorumCert,
     /// Author of the block that can be validated by the author's public key and the signature
+     /// 可以通过作者的公钥和签名验证的块的作者
     author: Author,
     /// Signature that the hash of this block has been authored by the owner of the private key
+    /// 签名该块的哈希值是由私钥的所有者创作的
     signature: Ed25519Signature,
 }
 
@@ -145,6 +168,7 @@ where
 
     // Create a block directly.  Most users should prefer make_block() as it ensures correct block
     // chaining.  This functionality should typically only be used for testing.
+    // 直接创建一个块。 大多数用户应该更喜欢make_block（），因为它确保正确的块链接。 此功能通常仅用于测试。
     pub fn new_internal(
         payload: T,
         parent_id: HashValue,
@@ -198,6 +222,7 @@ where
             parent_block.id(),
             round,
             // Height is always parent's height + 1 because it's just the position in the chain.
+            // 高度总是父亲的身高+ 1，因为它只是链中的位置。
             parent_block.height() + 1,
             timestamp_usecs,
             quorum_cert,
@@ -283,6 +308,7 @@ where
 
 // Internal use only. Contains all the fields in Block that contributes to the computation of
 // Block Id
+// 限内部使用。 包含Block中有助于计算Block Id的所有字段
 struct BlockSerializer<'a, T> {
     parent_id: HashValue,
     payload: &'a T,
@@ -331,6 +357,7 @@ where
     T: Default + Serialize + CanonicalSerialize,
 {
     // Is this block a parent of the parameter block?
+    // 该块是参数块的父级吗？
     pub fn is_parent_of(&self, block: &Self) -> bool {
         block.parent_id == self.id
     }
