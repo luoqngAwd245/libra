@@ -53,14 +53,19 @@ use tokio::runtime::{Runtime, TaskExecutor};
 type ConcurrentEventProcessor<T, P> = Arc<futures_locks::RwLock<EventProcessor<T, P>>>;
 
 /// Consensus configuration derived from ConsensusConfig
+/// 一致性配置继承自ConsensusConfig
 pub struct ChainedBftSMRConfig {
     /// Keep up to this number of committed blocks before cleaning them up from the block store.
+    /// 在从块存储区清除它们之前，请保持此数量的已提交块。
     pub max_pruned_blocks_in_mem: usize,
     /// Initial timeout for pacemaker
+     /// 起搏器的初始超时
     pub pacemaker_initial_timeout: Duration,
     /// Contiguous rounds for proposer
+    /// 提议者的连续轮次
     pub contiguous_rounds: u32,
     /// Max block size (number of transactions) that consensus pulls from mempool
+    /// 从mempool获得的最大块大小（事务数）
     pub max_block_size: u64,
 }
 
@@ -79,6 +84,8 @@ impl ChainedBftSMRConfig {
 /// ChainedBFTSmr is the one to generate the components (BLockStore, Proposer, etc.) and start the
 /// driver. ChainedBftSMR implements the StateMachineReplication, it is going to be used by
 /// ConsensusProvider for the e2e flow.
+/// ChainedBFTSmr是生成组件（BLockStore，Proposer等）并启动驱动程序的组件。 ChainedBftSMR实现
+/// StateMachineReplication，它将被ConsensusProvider用于e2e流。
 pub struct ChainedBftSMR<T, P> {
     author: P,
     // TODO [Reconfiguration] quorum size is just a function of current validator set.
@@ -157,6 +164,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
     }
 
     /// Create a proposer election handler based on proposers
+    /// 根据提议者创建一个提议者选举处理程序
     fn create_proposer_election(
         &self,
         winning_proposals_sender: channel::Sender<ProposalInfo<T, P>>,
@@ -425,6 +433,8 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
         // We first start the network and retrieve the network receivers (this function needs a
         // mutable reference).
         // Must do it here before giving the clones of network to other components.
+         // 我们首先启动网络并检索网络接收器（此功能需要一个可变参考）。
+        // 在将网络克隆提供给其他组件之前，必须先执行此操作。
         let network_receivers = self.network.start(&executor);
         let initial_data = self
             .initial_data
@@ -538,6 +548,7 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
     }
 
     /// Stop is synchronous: waits for all the worker threads to terminate.
+     /// Stop是同步的：等待所有工作线程终止。
     fn stop(&mut self) {
         if let Some(rt) = self.runtime.take() {
             block_on(rt.shutdown_now().compat()).unwrap();
