@@ -46,6 +46,9 @@ use types::ledger_info::LedgerInfoWithSignatures;
 /// - Done(true) indicates that the proposal was sent to the proposer election
 /// - NeedFetch means separate task mast be spawned for fetching block
 /// - Caller should call fetch_and_process_proposal in separate task when NeedFetch is returned
+///初始提案处理的结果
+/// NeedFetch意味着生成单独的任务栏以获取块
+///当返回NeedFetch时，调用者应该在单独的任务中调用fetch_and_process_proposal
 pub enum ProcessProposalResult<T, P> {
     Done(bool),
     NeedFetch(Instant, ProposalInfo<T, P>),
@@ -57,6 +60,8 @@ pub enum ProcessProposalResult<T, P> {
 /// etc.). It is exposing the async processing functions for each event type.
 /// The caller is responsible for running the event loops and driving the execution via some
 /// executors.
+/// 共识SMR以基于事件的方式工作：EventProcessor负责处理各个事件（例如，process_new_round，process_proposal，
+/// process_vote等）。 它为每种事件类型公开了异步处理函数。 调用者负责运行事件循环并通过某些执行程序驱动执行。
 pub struct EventProcessor<T, P> {
     author: P,
     block_store: Arc<BlockStore<T>>,
@@ -123,6 +128,17 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// Replica:
     ///
     /// Do nothing
+        ///
+    /// leader：
+    ///
+    /// 此事件由上一轮的新仲裁证书或上一轮的超时证书触发。 在任何一种情况下，如果这个副本是本轮的新提议者，
+    /// 它就可以提议并保证它可以创建一个所有诚实副本都可以投票的提案。 虽然此方法每轮最多只能调用一次，
+    /// 但我们确保每轮最多只能生成一个提案，以避免意外模糊提案。
+    ///
+    /// Replica：
+    ///
+    /// 不做任何事情
+    ///
     pub async fn process_new_round_event(&self, new_round_event: NewRoundEvent) {
         debug!("Processing {}", new_round_event);
         counters::CURRENT_ROUND.set(new_round_event.round as i64);
@@ -190,6 +206,13 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// The reason for separating `process_proposal` from `process_winning_proposal` is to
     /// (a) asynchronously prefetch dependencies and
     /// (b) allow the proposer election to choose one proposal out of many.
+    /// 该功能负责处理传入的提议和Quorum证书。
+    /// 1.提交新QC携带的提交状态
+    /// 2.从提交状态获取所有块到QC
+    /// 3.将提议转发到ProposerElection队列，最终将每轮触发一个获胜提议（通过 一个单独的功能）。
+    /// 将`process_proposal`与`process_winning_proposal`分开的原因是：
+    /// （a）异步预取依赖关系和
+    /// （b）允许提议人选举从众多提案中选出一项提案。
     pub async fn process_proposal(
         &self,
         proposal: ProposalInfo<T, P>,
@@ -198,6 +221,9 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         // Pacemaker is going to be updated with all the proposal certificates later,
         // but it's known that the pacemaker's round is not going to decrease so we can already
         // filter out the proposals from old rounds.
+        	// Pacemaker将在稍后更新所有提案证书，
+         //但是众所周知，起搏器的回合不会减少，所以我们已经可以了
+         //过滤旧轮次的提案。
         let current_round = self.pacemaker.current_round();
         if proposal.proposal.round() < self.pacemaker.current_round() {
             warn!(
@@ -272,6 +298,8 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// so be careful with the updates. The safest thing to do is to pass the proposal further
     /// to the proposal election.
     /// This function is invoked when all the dependencies for the given proposal are ready.
+     /// 完成提议处理：请注意，多个任务可以并行执行此功能，因此请小心更新。 最安全的做法是将提案进一步提交给提案选举。
+    /// 当给定提议的所有依赖项都准备就绪时，将调用此函数。
     async fn finish_proposal_processing(
         &self,
         proposal: ProposalInfo<T, P>,
@@ -300,6 +328,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     }
 
     /// Fetches and completes processing proposal in dedicated task
+    /// 在专用任务中获取并完成处理建议
     pub async fn fetch_and_process_proposal(
         &self,
         deadline: Instant,
@@ -325,6 +354,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
     /// Takes mutable reference to avoid race with other processing and perform state
     /// synchronization, then completes processing proposal in dedicated task
+     /// 采用可变引用以避免与其他处理竞争并执行状态同步，然后在专用任务中完成处理提议
     pub async fn sync_and_process_proposal(
         &mut self,
         deadline: Instant,
@@ -353,6 +383,10 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// a pacemaker timeout certificate is formed with 2f+1 timeouts, the next proposer will be
     /// able to chain a proposal block to a highest quorum certificate such that all honest replicas
     /// can vote for it.
+    /// 收到TimeoutMsg后，请确保在处理起搏器超时之前，将具有较高仲裁证书的任何分支填充到此副本。
+    /// 这确保了当用2f + 1超时形成起搏器超时证书时，下一个提议者将能够将提议块链接到最高法定人数证书，
+    /// 使得所有诚实的副本都可以投票。
+
     pub async fn process_timeout_msg(&mut self, timeout_msg: TimeoutMsg) {
         debug!(
             "Received a new round msg for round {} from {}",
@@ -371,6 +405,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         if current_highest_quorum_cert_round < new_round_highest_quorum_cert_round {
             // The timeout message carries a QC higher than what this node has seen before:
             // run state synchronization.
+            // 超时消息的QC高于此节点之前看到的QC：运行状态同步。
             let deadline = self.pacemaker.current_round_deadline();
             match self
                 .sync_manager
@@ -408,10 +443,15 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// to ensure that the next proposer can make a proposal that can be voted on by all replicas.
     /// Saving the consensus state ensures that on restart, the replicas will not waste time
     /// on previous rounds.
+    /// 副本停止投票，并保存其共识状态。 投票停止以确保下一个提议者能够提出可由所有复制品投票的提案。
+    /// 保存共识状态可确保在重新启动时，副本不会在前几轮中浪费时间。
     pub async fn process_outgoing_pacemaker_timeout(&self, round: Round) -> Option<TimeoutMsg> {
         // Stop voting at this round, persist the consensus state to support restarting from
         // a recent round (i.e. > the last vote round)  and then send the highest quorum
         // certificate known
+        /在此轮停止投票，坚持共识状态以支持重启
+         //最近一轮（即>最后一轮投票），然后发送最高法定人数
+         //证书已知
         let consensus_state = self
             .safety_rules
             .write()
@@ -453,6 +493,10 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// 2. Try to vote for it following the safety rules.
     /// 3. In case a validator chooses to vote, send the vote to the representatives at the next
     /// position.
+    /// 此功能处理被选为其轮次代表的提案：
+    /// 1.将其添加到块商店。
+    /// 2 .按照安全规则尝试投票。
+    /// 3.如果验证人选择投票，则将投票发送给下一个位置的代表。
     pub async fn process_winning_proposal(&self, proposal: ProposalInfo<T, P>) {
         let qc = proposal.proposal.quorum_cert();
         let update_res = self.safety_rules.write().unwrap().update(qc);
@@ -483,6 +527,8 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
         // Checking pacemaker round again, because multiple proposal can now race
         // during async block retrieval
+        //再次检查心脏起搏器，因为多个提案现在可以竞赛
+         //在异步块检索期间
         if self.pacemaker.current_round() != block.round() {
             debug!(
                 "Skip voting for winning proposal {} rejected because round is incorrect. Pacemaker: {}, proposal: {}",
@@ -607,9 +653,14 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// potential attacks).
     /// 2. Add the vote to the store and check whether it finishes a QC.
     /// 3. Once the QC successfully formed, notify the Pacemaker.
+    ///  新投票时：
+    /// 1.筛选出不应由此验证程序处理的轮次的投票（以避免潜在的攻击）。
+    /// 2.将投票添加到商店并检查它是否完成了质量控制。
+    /// 3.质量控制成功后，通知心脏起搏器。
     #[allow(clippy::collapsible_if)] // Collapsing here would make if look ugly
     pub async fn process_vote(&self, vote: VoteMsg, quorum_size: usize) {
         // Check whether this validator is a valid recipient of the vote.
+         // 检查此验证器是否是投票的有效收件人。
         let next_round = vote.round() + 1;
         if self
             .proposer_election
@@ -631,6 +682,8 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         let deadline = self.pacemaker.current_round_deadline();
         // TODO [Reconfiguration] Verify epoch of the vote message.
         // Add the vote and check whether it completes a new QC.
+         // TODO [重新配置]验证投票消息的时期。
+        //  添加投票并检查是否完成了新的质量控制。
         match self
             .block_store
             .insert_vote(vote.clone(), quorum_size)
@@ -664,11 +717,13 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
                     }
                 }
                 // Notify the Pacemaker about the new QC round.
+                // 向Pacemaker通报新的QC回合。
                 self.pacemaker
                     .process_certificates(vote.round(), None)
                     .await;
             }
             // nothing interesting with votes arriving for the QC that has been formed
+             // 没有任何有趣的选票到达已经形成的QC
             _ => {}
         };
     }
@@ -678,6 +733,10 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// 2. After the state is finalized, update the txn manager with the status of the committed
     /// transactions.
     /// 3. Prune the tree.
+    /// 新提交时：
+    /// 1.通过最终证明通知国家计算机。
+    /// 2.状态完成后，使用已提交事务的状态更新txn管理器。
+    /// 3.修剪树。
     async fn process_commit(
         &self,
         committed_block: Arc<Block<T>>,
@@ -685,6 +744,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     ) {
         // Verify that the ledger info is indeed for the block we're planning to
         // commit.
+        // 验证分类帐信息确实是我们计划提交的块。
         assert_eq!(
             finality_proof.ledger_info().consensus_block_id(),
             committed_block.id()
@@ -692,6 +752,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
         // Update the pacemaker with the highest committed round so that on the next round
         // duration it calculates, the initial round index is reset
+         // 使用最高承诺回合更新起搏器，以便在计算的下一轮持续时间内重置初始回合索引
         self.pacemaker
             .update_highest_committed_round(committed_block.round());
 
@@ -700,6 +761,8 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
             // violate safety of the protocol. Specifically, an executor service is going to panic
             // if it fails to persist the commit requests, which would crash the whole process
             // including consensus.
+            // 我们假设状态计算机不能进入可能违反协议安全性的不一致状态。 具体来说，如果执行者服务
+            // 无法持久保存提交请求，那么它将会出现恐慌，这会导致包括共识在内的整个过程崩溃。
             error!(
                 "Failed to persist commit, mempool will not be notified: {:?}",
                 e
@@ -709,6 +772,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         // At this moment the new state is persisted and we can notify the clients.
         // Multiple blocks might be committed at once: notify about all the transactions in the
         // path from the old root to the new root.
+        // 此时新状态持续存在，我们可以通知客户。 可以一次提交多个块：通知从旧根到新根的路径中的所有事务。
         for committed in self
             .block_store
             .path_from_root(Arc::clone(&committed_block))
@@ -746,6 +810,10 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     ///
     /// The current version of the function is not really async, but keeping it this way for
     /// future possible changes.
+     ///
+    /// 从初始父ID开始从块存储中检索n个链式块，如果找不到id或其祖先，则返回<n（尽可能多）。
+    ///
+    /// 该函数的当前版本并不是真正的异步，而是保持这种方式以适应未来可能的变化。
     pub async fn process_block_retrieval(&self, request: BlockRetrievalRequest<T>) {
         let mut blocks = vec![];
         let mut status = BlockRetrievalStatus::SUCCEEDED;
@@ -775,6 +843,8 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// Retrieve the chunk from storage and send it back.
     /// We'll also try to add the QuorumCert into block store if it's for a existing block and
     /// potentially commit.
+    /// 从存储中检索块并将其发回。
+    /// 我们还将尝试将QuorumCert添加到块存储中，如果它是针对现有块并且可能提交的话。
     pub async fn process_chunk_retrieval(&self, request: ChunkRetrievalRequest) {
         if self
             .block_store
