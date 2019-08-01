@@ -31,28 +31,41 @@ use types::ledger_info::LedgerInfoWithSignatures;
 /// This structure maintains a consistent block tree of parent and children links. Blocks contain
 /// parent links and are immutable.  For all parent links, a child link exists. This structure
 /// should only be used internally in BlockStore.
+/// 此结构维护父和子链接的一致块树。 块包含父链接并且是不可变的。 对于所有父链接，存在子链接。
+/// 此结构应仅在BlockStore内部使用。
 pub struct BlockTree<T> {
     /// All the blocks known to this replica (with parent links)
+    /// 此副本已知的所有块（具有父链接）
     id_to_block: HashMap<HashValue, Arc<Block<T>>>,
     /// All child links (i.e. reverse parent links) for easy cleaning.  Note that a block may
     /// have multiple child links.  There should be id_to_blocks.len() - 1 total
     /// id_to_child entries.
+    /// 所有子链接（即反向父链接）便于清理。 请注意，块可能有多个子链接。 应该有id_to_blocks.len（） -
+    /// 总共1个id_to_child条目。
     id_to_child: HashMap<HashValue, Vec<Arc<Block<T>>>>,
     /// Mapping between proposals(Block) to execution results.
+    // 提案（块）与执行结果之间的映射。
     id_to_state: HashMap<HashValue, ExecutedState>,
     /// Keeps the state compute results of the executed blocks.
     /// The state compute results is calculated for all the pending blocks prior to insertion to
     /// the tree (the initial root node might not have it, because it's been already
     /// committed). The execution results are not persisted: they're recalculated again for the
     /// pending blocks upon restart.
+     /// 保持已执行块的状态计算结果。
+    /// 在插入树之前计算所有挂起块的状态计算结果（初始根节点可能没有它，因为它已经被提交）。
+    /// 执行结果不会持久存在：重新启动时会为挂起的块重新计算它们。
     id_to_compute_result: HashMap<HashValue, Arc<StateComputeResult>>,
     /// Root of the tree.
+    /// 书的根节点
     root: Arc<Block<T>>,
     /// A certified block with highest round
+     /// 经认证的最高圆形块
     highest_certified_block: Arc<Block<T>>,
     /// The quorum certificate of highest_certified_block
+    // highest_certified_block的仲裁证书
     highest_quorum_cert: Arc<QuorumCert>,
     /// The quorum certificate that carries a highest ledger info
+    /// 具有最高分类帐信息的仲裁证书
     highest_ledger_info: Arc<QuorumCert>,
 
     /// `id_to_votes` might keep multiple LedgerInfos per proposed block in order
@@ -61,12 +74,20 @@ pub struct BlockTree<T> {
     /// The vote digest is a hash that covers both the proposal id and the state id.
     /// Thus, the structure of `id_to_votes` is as follows:
     /// HashMap<proposed_block_id, HashMap<vote_digest, LedgerInfoWithSignatures>>
+    /// 为了容忍执行中的非确定性，`id_to_votes`可以为每个建议的块保留多个LedgerInfos：给定一个提议，
+    /// 将仅收集具有相同状态id的所有投票的QuorumCertificate。
+    ///
+    /// 投票摘要是一个覆盖提案ID和州ID的哈希。
+    /// 因此，`id_to_votes`的结构如下：
     id_to_votes: HashMap<HashValue, HashMap<HashValue, LedgerInfoWithSignatures>>,
     /// Map of block id to its completed quorum certificate (2f + 1 votes)
+    /// 块id到其完成的法定人数证书的地图（2f + 1票）
     id_to_quorum_cert: HashMap<HashValue, Arc<QuorumCert>>,
     /// To keep the IDs of the elements that have been pruned from the tree but not cleaned up yet.
+    /// 保留已从树中修剪但尚未清除的元素的ID。
     pruned_block_ids: VecDeque<HashValue>,
     /// Num pruned blocks to keep in memory.
+    /// Num修剪了块以保留在内存中。
     max_pruned_blocks_in_mem: usize,
 }
 
@@ -123,8 +144,10 @@ where
 
     fn remove_block(&mut self, block_id: HashValue) {
         // Delete my child links
+        // 删除我的子链接
         self.id_to_child.remove(&block_id);
         // Remove the block from the store
+        // 从存储中删除块
         self.id_to_block.remove(&block_id);
         self.id_to_state.remove(&block_id);
         self.id_to_compute_result.remove(&block_id);
@@ -277,6 +300,7 @@ where
         }
 
         // All the votes collected for all the execution results of a given proposal.
+         // 为给定提案的所有执行结果收集的所有选票。
         let block_votes = self
             .id_to_votes
             .entry(block_id)
@@ -285,6 +309,8 @@ where
         // Note that the digest covers not just the proposal id, but also the resulting
         // state id as well as the round number. In other words, if two different voters have the
         // same digest then they reached the same state following the same proposals.
+         // 请注意，摘要不仅包括提案ID，还包括结果状态ID和轮数。 换句话说，如果两个不同的选民有相同的摘要，
+        // 那么他们就会按照相同的提议达到相同的状态。
         let digest = vote_msg.vote_hash();
         let li_with_sig = block_votes.entry(digest).or_insert_with(|| {
             LedgerInfoWithSignatures::new(vote_msg.ledger_info().clone(), HashMap::new())
@@ -305,6 +331,7 @@ where
             );
             // Note that the block might not be present locally, in which case we cannot calculate
             // time between block creation and qc
+             // 请注意，块可能不在本地存在，在这种情况下，我们无法计算块创建和qc之间的时间
             if let Some(block) = self.get_block(block_id) {
                 if let Some(time_to_qc) = duration_since_epoch()
                     .checked_sub(Duration::from_micros(block.timestamp_usecs()))
@@ -328,6 +355,16 @@ where
     /// B_3 -> B_4, root = B_3
     ///
     /// Note this function is read-only, use with process_pruned_blocks to do the actual prune.
+    /// 找到要修剪到next_root_id的块（保留next_root_id的块）。 任何不属于next_root_id树的分支也应该被删除。
+    ///
+    /// For example, root = B_0
+    /// B_0 -> B_1 -> B_2
+    ///         |  -> B_3 -> B4
+    ///
+    /// prune_tree(B_3) should be left with
+    /// B_3 -> B_4, root = B_3
+    ///
+    /// 请注意，此函数是只读的，与process_pruned_blocks一起使用来执行实际修剪。
     pub(super) fn find_blocks_to_prune(&self, next_root_id: HashValue) -> VecDeque<HashValue> {
         // Nothing to do if this is the root
         if next_root_id == self.root.id() {
@@ -360,6 +397,9 @@ where
     /// Note that we do not necessarily remove the pruned blocks: they're kept in a separate buffer
     /// for some time in order to enable other peers to retrieve the blocks even after they've
     /// been committed.
+     /// 处理prune_tree返回的数据，它们是分开的，因为调用者可能有兴趣做额外的工作，例如 从持久存储中删除。
+    /// 请注意，我们不一定会删除已修剪的块：它们会在一个单独的缓冲区中保留一段时间，以便其他对等体能够在提交后检索块。
+  
     pub(super) fn process_pruned_blocks(
         &mut self,
         root_id: HashValue,
@@ -376,6 +416,8 @@ where
         // The newly pruned blocks are pushed back to the deque pruned_block_ids.
         // In case the overall number of the elements is greater than the predefined threshold,
         // the oldest elements (in the front of the deque) are removed from the tree.
+         // 新修剪的块被推回到deque pruned_block_ids。
+        // 如果元素的总数大于预定义的阈值，则从树中移除最旧的元素（在双端队列的前面）。
         self.pruned_block_ids.append(&mut newly_pruned_blocks);
         if self.pruned_block_ids.len() > self.max_pruned_blocks_in_mem {
             let num_blocks_to_remove = self.pruned_block_ids.len() - self.max_pruned_blocks_in_mem;
@@ -394,6 +436,10 @@ where
     /// a race, in which the root of the tree is propagated forward between retrieving the block
     /// and getting its path from root (e.g., at proposal generator). Hence, we don't want to panic
     /// and prefer to return None instead.
+    /// 返回根和给定块之间的所有块，包括给定块但不包括根。
+    ///  如果给定块不是根的后继，则返回None。
+    /// 虽然通常所提供的块应该总是属于活动树，但是可能存在竞争，其中树的根在检索块和从根获取其路径之间向前传播
+    /// （例如，在提议生成器处）。 因此，我们不想恐慌 并且更喜欢返回None。
     pub(super) fn path_from_root(&self, block: Arc<Block<T>>) -> Option<Vec<Arc<Block<T>>>> {
         let mut res = vec![];
         let mut cur_block = block;
@@ -436,6 +482,7 @@ where
     T: Serialize + Default + Debug + CanonicalSerialize,
 {
     /// Returns the number of blocks in the tree
+    /// 返回树中的块数
     pub(super) fn len(&self) -> usize {
         // BFS over the tree to find the number of blocks in the tree.
         let mut res = 0;
