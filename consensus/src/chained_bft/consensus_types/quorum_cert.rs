@@ -30,12 +30,16 @@ use types::{
 #[derive(Deserialize, Serialize, Clone, Debug, Eq, PartialEq)]
 pub struct QuorumCert {
     /// The id of a block that is certified by this QuorumCertificate.
+    /// 由此QuorumCertificate认证的块的ID。
     certified_block_id: HashValue,
     /// The execution state of the corresponding block.
+    /// 相应块的执行状态
     certified_state: ExecutedState,
     /// The round of a certified block.
+    /// 一轮认证的块。
     certified_block_round: Round,
     /// The signed LedgerInfo of a committed block that carries the data about the certified block.
+    /// 已签名的LedgerInfo，其中包含有关已认证块的数据。
     signed_ledger_info: LedgerInfoWithSignatures,
 }
 
@@ -95,6 +99,10 @@ impl QuorumCert {
     /// - the accumulator root hash of the LedgerInfo is set to `ACCUMULATOR_PLACEHOLDER_HASH`
     ///   constant.
     /// - the map of signatures is empty because genesis block is implicitly agreed.
+     /// QuorumCert的创世块：
+    /// - 块的ID由`GENESIS_BLOCK_ID`常量预先确定。
+    /// -  LedgerInfo的累加器根哈希值设置为“ACCUMULATOR_PLACEHOLDER_HASH”常量。
+    /// - 签名图是空的，因为隐含地同意了创世块。
     pub fn certificate_for_genesis() -> QuorumCert {
         let genesis_digest =
             VoteMsg::vote_digest(*GENESIS_BLOCK_ID, ExecutedState::state_for_genesis(), 0);
