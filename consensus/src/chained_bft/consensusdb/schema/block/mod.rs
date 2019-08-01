@@ -8,6 +8,13 @@
 //! |<---key---->|<---value--->|
 //! | block_hash |    block    |
 //! ```
+//! 此模块定义了共识块的物理存储架构。
+//!
+//! 由block_hash标识的序列化块字节。
+//! ```text
+//! |<---key---->|<---value--->|
+//! | block_hash |    block    |
+//! ```
 
 use super::BLOCK_CF_NAME;
 use crate::chained_bft::{common::Payload, consensus_types::block::Block};
