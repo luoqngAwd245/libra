@@ -15,11 +15,14 @@ use std::collections::HashMap;
 mod pacemaker_timeout_manager_test;
 
 /// Tracks the highest round known local and received timeout certificates
+/// 跟踪已知本地最高轮并获得超时证书
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct HighestTimeoutCertificates {
     // Highest timeout certificate gathered locally
+    // 本地收集的最高超时证书
     highest_local_timeout_certificate: Option<PacemakerTimeoutCertificate>,
     // Highest timeout certificate received from another replica
+    // 从另一个副本收到的最高超时证书
     highest_received_timeout_certificate: Option<PacemakerTimeoutCertificate>,
 }
 
@@ -37,6 +40,7 @@ impl HighestTimeoutCertificates {
 
     /// Return a optional reference to the highest timeout certificate (locally generated or
     /// remotely received)
+    /// 返回对最高超时证书的可选引用（本地生成或远程接收）
     pub fn highest_timeout_certificate(&self) -> Option<&PacemakerTimeoutCertificate> {
         if let Some(highest_received_timeout_certificate) =
             self.highest_received_timeout_certificate.as_ref()
@@ -63,14 +67,21 @@ impl HighestTimeoutCertificates {
 ///
 /// A replica can generate and track TimeoutCertificates of the highest round (locally and received)
 /// to allow a pacemaker to advance to the latest certificate round.
+/// 管理从副本接收的PacemakerTimeout结构。
+///
+/// 副本可以生成和跟踪最高回合（本地和已接收）的TimeoutCertificates，以允许心脏起搏器前进到最新的证书回合。
 pub struct PacemakerTimeoutManager {
     // The minimum quorum to generate a timeout certificate
+    // 生成超时证书的最小法定数量
     timeout_certificate_quorum_size: usize,
     // Track the PacemakerTimeoutMsg for highest timeout round received from this node
+    // 跟踪PacemakerTimeoutMsg以获取从此节点收到的最高超时轮次
     author_to_received_timeouts: HashMap<Author, PacemakerTimeout>,
     // Highest timeout certificates
+    // 最高超时证书
     highest_timeout_certificates: HighestTimeoutCertificates,
     // Used to persistently store the latest known timeout certificate
+    // 用于持久存储最新的已知超时证书
     persistent_liveness_storage: Box<dyn PersistentLivenessStorage>,
 }
 
@@ -83,6 +94,8 @@ impl PacemakerTimeoutManager {
         // This struct maintains the invariant that the highest round timeout certificate
         // that author_to_received_timeouts can generate is always equal to
         // highest_timeout_certificates.highest_local_timeout_certificate.
+        // 此结构维护不变量，即author_to_received_timeouts可以生成的最高轮超时证书始终等于highest_timeout_certificates。
+        // highest_local_timeout_certificate。
         let mut author_to_received_timeouts = HashMap::new();
         if let Some(tc) = &highest_timeout_certificates.highest_local_timeout_certificate {
             author_to_received_timeouts = tc
@@ -108,6 +121,12 @@ impl PacemakerTimeoutManager {
     /// For example, if timeout_certificate_quorum_size=3 and we received unique author timeouts
     /// for rounds (1,2,3,4), then rounds (2,3,4) would form PacemakerTimeoutCertificate with
     /// round=2.
+    /// 返回从作者映射到超时消息的最高轮PacemakerTimeoutCertificate，如果没有足够的超时消息，则返回None。
+    /// PacemakerTimeoutCertificate由收到的N个最高超时消息组成，其中N = timeout_quorum_size。
+    /// PacemakerTimeoutCertificate的轮次被确定为用于生成此证书的所有消息的最小轮次。
+    ///
+    /// 例如，如果timeout_certificate_quorum_size = 3并且我们收到了轮次（1,2,3,4）的唯一作者超时，那么轮次（2,3,
+    /// 4）将形成PacemakerTimeoutCertificate，其中round = 2。
     fn generate_timeout_certificate(
         author_to_received_timeouts: &HashMap<Author, PacemakerTimeout>,
         timeout_certificate_quorum_size: usize,
@@ -130,6 +149,8 @@ impl PacemakerTimeoutManager {
 
     /// Updates internal state according to received message from remote pacemaker and returns true
     /// if round derived from highest PacemakerTimeoutCertificate has increased.
+    /// 根据从远程起搏器接收的消息更新内部状态，如果从最高PacemakerTimeoutCertificate派生的round增加，则返回true。
+
     pub fn update_received_timeout(&mut self, pacemaker_timeout: PacemakerTimeout) -> bool {
         let author = pacemaker_timeout.author();
         let prev_timeout = self.author_to_received_timeouts.get(&author).cloned();
@@ -181,6 +202,8 @@ impl PacemakerTimeoutManager {
 
     /// Attempts to update highest_received_timeout_certificate when receiving a new remote
     /// timeout certificate.  Returns true if highest_received_timeout_certificate has changed
+     /// 尝试在接收新的远程超时证书时更新highest_received_timeout_certificate。 如果
+    /// highest_received_timeout_certificate已更改，则返回true
     pub fn update_highest_received_timeout_certificate(
         &mut self,
         timeout_certificate: &PacemakerTimeoutCertificate,
@@ -215,6 +238,7 @@ impl PacemakerTimeoutManager {
 
     /// Return a optional reference to the highest timeout certificate (locally generated or
     /// remotely received)
+     /// 返回对最高超时证书的可选引用（本地生成或远程接收）
     pub fn highest_timeout_certificate(&self) -> Option<&PacemakerTimeoutCertificate> {
         self.highest_timeout_certificates
             .highest_timeout_certificate()
