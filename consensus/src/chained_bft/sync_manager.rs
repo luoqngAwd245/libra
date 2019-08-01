@@ -29,6 +29,7 @@ use termion::color::*;
 use types::{account_address::AccountAddress, transaction::TransactionListWithProof};
 
 /// SyncManager is responsible for fetching dependencies and 'catching up' for given qc/ledger info
+/// SyncManager负责获取依赖关系并为给定的qc /分类帐信息“追赶”
 pub struct SyncManager<T> {
     block_store: Arc<BlockStore<T>>,
     storage: Arc<dyn PersistentStorage<T>>,
@@ -38,12 +39,17 @@ pub struct SyncManager<T> {
 }
 
 /// Keeps the necessary context for `SyncMgr` to bring the missing information.
+/// 此结构描述了我们要同步到的位置
 pub struct SyncMgrContext {
+    /// 用于调用状态同步的最高分类帐信息现在这是可选的，因为投票没有它
     pub highest_ledger_info: QuorumCert,
+     /// 要插入块树的仲裁证书
     pub highest_quorum_cert: QuorumCert,
     /// Preferred peer: this is typically the peer that delivered the original QC and
     /// thus has higher chances to be able to return the information than the other
     /// peers that signed the QC.
+    /// 触发此同步的消息的作者。
+    /// 现在我们从这个同伴同步。 将来我们将使用quorum证书中的同行，而这个领域将主要是信息性的
     pub preferred_peer: Author,
 }
 
@@ -69,6 +75,8 @@ where
     ) -> SyncManager<T> {
         // Our counters are initialized via lazy_static, so they're not going to appear in
         // Prometheus if some conditions never happen.  Invoking get() function enforces creation.
+        // 我们的计数器是通过lazy_static初始化的，所以如果某些条件永远不会发生，它们就不会出现在Prometheus中。
+        // 调用get（）函数可以强制创建。
         counters::BLOCK_RETRIEVAL_COUNT.get();
         counters::STATE_SYNC_COUNT.get();
         counters::STATE_SYNC_TXN_REPLAYED.get();
@@ -85,6 +93,9 @@ where
     /// Fetches dependencies for given sync_info.quorum_cert
     /// If gap is large, performs state sync using process_highest_ledger_info
     /// Inserts sync_info.quorum_cert into block store as the last step
+    /// 获取给定sync_info.quorum_cert的依赖项
+    /// 如果间隙很大，则使用process_highest_ledger_info执行状态同步
+    /// 作为最后一步，将sync_info.quorum_cert插入到块存储中
     pub async fn sync_to(
         &mut self,
         deadline: Instant,
@@ -107,6 +118,7 @@ where
     }
 
     /// Get a chunk of transactions as a batch
+    /// 批量获取一大笔交易
     pub async fn get_chunk(
         &self,
         start_version: u64,
@@ -131,6 +143,8 @@ where
     /// updating the consensus state(with qc) and deciding whether to vote(with block)
     /// The missing ancestors are going to be retrieved from the given peer. If a given peer
     /// fails to provide the missing ancestors, the qc is not going to be added.
+    /// 从块中单独插入仲裁证书，用于拆分更新共识状态（使用qc）和决定是否投票（使用块）的处理
+    /// 将丢失的祖先将从给定的同伴中检索。 如果给定的对等方未能提供缺失的祖先，则不会添加qc。
     pub async fn fetch_quorum_cert(
         &self,
         qc: QuorumCert,
@@ -188,6 +202,11 @@ where
     /// 2. We persist the 3-chain to storage before start sync to ensure we could restart if we
     /// crash in the middle of the sync.
     /// 3. We prune the old tree and replace with a new tree built with the 3-chain.
+    ///  检查对等方发送的最高分类帐信息，看看我们是否落后并且如果我们的树中不存在已提交的块，则启动快进同步。
+    /// 它的工作原理如下：
+    /// 1.请求来自对等方的已提交3链，如果C2是我们请求B0 < -  C0 < -  B1 < -  C1 < -  B2（< -  C2）的highest_ledger_info
+    /// 2.我们在开始同步之前将3链保留到存储，以确保如果我们在同步过程中崩溃，我们可以重新启动。
+    /// 我们修剪旧树，并用一个用3链建造的新树替换。
     async fn process_highest_ledger_info(
         &self,
         highest_ledger_info: QuorumCert,
@@ -229,6 +248,7 @@ where
         quorum_certs.push(blocks[1].quorum_cert().clone());
         // If a node restarts in the middle of state synchronization, it is going to try to catch up
         // to the stored quorum certs as the new root.
+         // 如果节点在状态同步过程中重新启动，它将尝试捕获存储的仲裁证书作为新根。
         self.storage
             .save_tree(blocks.clone(), quorum_certs.clone())?;
         let pre_sync_instance = Instant::now();
@@ -266,6 +286,7 @@ where
 }
 
 /// BlockRetriever is used internally to retrieve blocks
+/// BlockRetriever在内部用于检索块
 struct BlockRetriever {
     network: ConsensusNetworkImpl,
     deadline: Instant,
@@ -299,6 +320,15 @@ impl BlockRetriever {
     /// leader to drive quorum certificate creation The other peers from the quorum certificate
     /// will be randomly tried next.  If all members of the quorum certificate are exhausted, an
     /// error is returned
+    ///
+    /// 检索给定QC的n个块的链
+    ///
+    /// 返回具有保证大小num_blocks的Vec的结果
+    /// 此保证基于BlockRetrievalResponse :: verify，确保响应中的块数等于请求的块数。 此方法将继续，
+    /// 直到达到轮次截止日期或仲裁证书成员都未能返回丢失的链。
+    ///
+    /// 块检索的第一次尝试将始终发送到preferred_peer以允许领导者驱动仲裁证书创建接下来将随机尝试
+    /// 仲裁证书中的其他对等。 如果仲裁证书的所有成员都已用尽，则会返回错误
     pub async fn retrieve_block_for_qc<'a, T>(
         &'a mut self,
         qc: &'a QuorumCert,
@@ -388,6 +418,7 @@ const RETRIEVAL_MAX_EXP: u32 = 4;
 
 /// Returns exponentially increasing timeout with
 /// limit of RETRIEVAL_INITIAL_TIMEOUT*(2^RETRIEVAL_MAX_EXP)
+/// 返回指数增加的超时，限制为RETRIEVAL_INITIAL_TIMEOUT *（2 ^ RETRIEVAL_MAX_EXP）
 fn retrieval_timeout(deadline: &Instant, attempt: u32) -> Option<Duration> {
     assert!(attempt > 0, "retrieval_timeout attempt can't be 0");
     let exp = RETRIEVAL_MAX_EXP.min(attempt - 1); // [0..RETRIEVAL_MAX_EXP]
