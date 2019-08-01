@@ -40,6 +40,7 @@ use tokio::runtime::TaskExecutor;
 use types::{transaction::TransactionListWithProof, validator_verifier::ValidatorVerifier};
 
 /// The response sent back from EventProcessor for the BlockRetrievalRequest.
+/// 响应从event_processor发回BlockRetrievalRequest
 #[derive(Debug)]
 pub struct BlockRetrievalResponse<T> {
     pub status: BlockRetrievalStatus,
@@ -72,6 +73,7 @@ impl<T: Payload> BlockRetrievalResponse<T> {
 
 /// BlockRetrievalRequest carries a block id for the requested block as well as the
 /// oneshot sender to deliver the response.
+/// BlockRetrievalRequest携带所请求块的块ID以及单个发送者以传递响应。
 pub struct BlockRetrievalRequest<T> {
     pub block_id: HashValue,
     pub num_blocks: u64,
@@ -80,6 +82,7 @@ pub struct BlockRetrievalRequest<T> {
 
 /// Represents a request to get up to batch_size transactions starting from start_version
 /// with the oneshot sender to deliver the response.
+/// 表示从start_version开始到达batch_size事务的请求，其中oneshot发送者提供响应。
 pub struct ChunkRetrievalRequest {
     pub start_version: u64,
     pub target: QuorumCert,
@@ -89,6 +92,12 @@ pub struct ChunkRetrievalRequest {
 
 /// Just a convenience struct to keep all the network proxy receiving queues in one place.
 /// Will be returned by the networking trait upon startup.
+/// 只是一个便利结构，可以将所有网络代理接收队列保存在一个地方。
+/// 1.提案
+/// 2.投票
+/// 3.块检索请求（该请求带有一个单一的发送者以返回该块）
+/// 4.起搏器超时
+/// 将在启动时由网络特征返回。
 pub struct NetworkReceivers<T, P> {
     pub proposals: channel::Receiver<ProposalInfo<T, P>>,
     pub votes: channel::Receiver<VoteMsg>,
@@ -99,6 +108,7 @@ pub struct NetworkReceivers<T, P> {
 }
 
 /// Implements the actual networking support for all consensus messaging.
+/// 实现对所有共识消息传递的实际网络支持。
 pub struct ConsensusNetworkImpl {
     author: Author,
     network_sender: ConsensusNetworkSender,
@@ -106,6 +116,8 @@ pub struct ConsensusNetworkImpl {
     // Self sender and self receivers provide a shortcut for sending the messages to itself.
     // (self sending is not supported by the networking API).
     // Note that we do not support self rpc requests as it might cause infinite recursive calls.
+     // 自发送方和自身接收方提供了将消息发送给自身的快捷方式。（网络API不支持自发送）。注意我们不支持
+    // 自我rpc请求，因为它可能导致无限递归调用。
     self_sender: channel::Sender<Result<Event<ConsensusMsg>, failure::Error>>,
     self_receiver: Option<channel::Receiver<Result<Event<ConsensusMsg>, failure::Error>>>,
     peers: Arc<Vec<Author>>,
@@ -147,6 +159,7 @@ impl ConsensusNetworkImpl {
     }
 
     /// Establishes the initial connections with the peers and returns the receivers.
+    /// 建立与对等体的初始连接并返回接收器。
     pub fn start<T: Payload, P: ProposerInfo>(
         &mut self,
         executor: &TaskExecutor,
@@ -200,6 +213,8 @@ impl ConsensusNetworkImpl {
     /// Tries to retrieve num of blocks backwards starting from id from the given peer: the function
     /// returns a future that is either fulfilled with BlockRetrievalResponse, or with a
     /// BlockRetrievalFailure.
+    /// 尝试从给定对等体的id开始向后检索数量的块：该函数返回使用BlockRetrievalResponse或
+    /// BlockRetrievalFailure实现的未来。
     pub async fn request_block<T: Payload>(
         &mut self,
         block_id: HashValue,
@@ -251,6 +266,11 @@ impl ConsensusNetworkImpl {
     /// internal(to provide back pressure), it does not indicate the message is delivered or sent
     /// out. It does not give indication about when the message is delivered to the recipients,
     /// as well as there is no indication about the network failures.
+    ///
+    /// 尝试将给定的提议（块和提议者元数据）发送给所有参与者。 接收端的验证器将被通知roposal队列中的新提议。
+    ///
+    /// 一旦将消息放入mpsc通道到网络内部（提供反压），就会实现未来，它不表示消息已发送或发送出去。
+    /// 它不会指示消息何时传递给收件人，以及没有关于网络故障的指示。
     pub async fn broadcast_proposal<T: Payload, P: ProposerInfo>(
         &mut self,
         proposal: ProposalInfo<T, P>,
@@ -286,6 +306,12 @@ impl ConsensusNetworkImpl {
     /// internal(to provide back pressure), it does not indicate the message is delivered or sent
     /// out. It does not give indication about when the message is delivered to the recipients,
     /// as well as there is no indication about the network failures.
+    ///
+    /// 将投票发送给选定的收件人（通常是我们认为可以在下一轮中作为提议者的收件人）。
+    /// 接收端的收件人将收到有关投票队列中新投票的通知。
+    ///
+    /// 一旦将消息放入mpsc通道到网络内部（提供反压），就会实现未来，它不表示消息已发送或发送出去。
+    /// 它不会指示消息何时传递给收件人，以及没有关于网络故障的指示。
     pub async fn send_vote(&self, vote_msg: VoteMsg, recipients: Vec<Author>) {
         let mut network_sender = self.network_sender.clone();
         let mut self_sender = self.self_sender.clone();
@@ -306,6 +332,7 @@ impl ConsensusNetworkImpl {
     }
 
     /// Broadcasts timeout message to all validators
+    /// 向所有验证器广播超时消息
     pub async fn broadcast_timeout_msg(&mut self, timeout_msg: TimeoutMsg) {
         let mut msg = ConsensusMsg::new();
         msg.set_timeout_msg(timeout_msg.into_proto());
