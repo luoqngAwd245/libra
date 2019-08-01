@@ -14,8 +14,10 @@ use std::pin::Pin;
 /// The rotating proposer maps a round to an author according to a round-robin rotation.
 /// A fixed proposer strategy loses liveness when the fixed proposer is down. Rotating proposers
 /// won't gather quorum certificates to machine loss/byzantine behavior on f/n rounds.
+/// 旋转提议器根据循环旋转将圆形映射到作者。
+/// 当固定提议者关闭时，固定的提议者策略会失去活力。 轮换提议者不会收集法定证书以进行f / n轮的机器丢失/拜占庭行为。
 pub struct RotatingProposer<T, P> {
-    // Ordering of proposers to rotate through (all honest replicas must agree on this)
+    // Ordering of proposers to rotate through (all honest replicas must agree on this)   
     proposers: Vec<P>,
     // Number of contiguous rounds (i.e. round numbers increase by 1) a proposer is active
     // in a row
@@ -26,6 +28,7 @@ pub struct RotatingProposer<T, P> {
 
 impl<T, P: ProposerInfo> RotatingProposer<T, P> {
     /// With only one proposer in the vector, it behaves the same as a fixed proposer strategy.
+    /// 在向量中只有一个提议者，它的行为与固定的提议者策略相同。
     pub fn new(
         proposers: Vec<P>,
         contiguous_rounds: u32,
@@ -63,6 +66,7 @@ impl<T: Payload, P: ProposerInfo> ProposerElection<T, P> for RotatingProposer<T,
     ) -> Pin<Box<dyn Future<Output = ()> + Send>> {
         // This is a simple rotating proposer, the proposal is processed in the context of the
         // caller task, no synchronization required because there is no mutable state.
+        // 这是一个简单的旋转提议器，提议在调用者任务的上下文中处理，不需要同步，因为没有可变状态。
         let round_author = self.get_proposer(proposal.proposal.round()).get_author();
         if round_author != proposal.proposer_info.get_author() {
             return async {}.boxed();
