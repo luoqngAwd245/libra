@@ -22,9 +22,11 @@ use std::{
 };
 
 /// Persistent storage for liveness data
+/// 活动数据的持久存储
 pub trait PersistentLivenessStorage: Send + Sync {
     /// Persist the highest timeout certificate for improved liveness - proof for other replicas
     /// to jump to this round
+    /// 坚持最高超时证书以提高活力 - 其他复制品的证据可以跳转到这一轮
     fn save_highest_timeout_cert(
         &self,
         highest_timeout_certs: HighestTimeoutCertificates,
@@ -37,24 +39,36 @@ pub trait PersistentLivenessStorage: Send + Sync {
 /// and supports clean up (i.e. tree pruning).
 /// Blocks persisted are proposed but not yet committed.  The committed state is persisted
 /// via StateComputer.
+/// 持久存储对于节点崩溃时保持安全至关重要。 具体而言，在重新启动时，正确的节点将不会模糊。
+/// 即使所有节点都崩溃，也能保证安全。 该特征还支持活跃方面（即最高超时证书）并支持清理（即树修剪）。
+///
+/// 持久化的块被提议但尚未提交。 已提交的状态通过StateComputer持久化。
 pub trait PersistentStorage<T>: PersistentLivenessStorage + Send + Sync {
     /// Get an Arc to an instance of PersistentLivenessStorage
     /// (workaround for trait downcasting
+    /// 获取PersistentLivenessStorage实例的Arc
+    ///（特征向下转型的解决方法
     fn persistent_liveness_storage(&self) -> Box<dyn PersistentLivenessStorage>;
 
     /// Persist the blocks and quorum certs into storage atomically.
+    /// 以原子方式将块和仲裁证书保存到存储中。
     fn save_tree(&self, blocks: Vec<Block<T>>, quorum_certs: Vec<QuorumCert>) -> Result<()>;
 
     /// Delete the corresponding blocks and quorum certs atomically.
+    /// 原子地删除相应的块和仲裁证书。
     fn prune_tree(&self, block_ids: Vec<HashValue>) -> Result<()>;
 
     /// Persist the consensus state.
+     /// 坚持共识状态。
     fn save_consensus_state(&self, state: ConsensusState) -> Result<()>;
 
     /// When the node restart, construct the instance and returned the data read from db.
     /// This could guarantee we only read once during start, and we would panic if the
     /// read fails.
     /// It makes sense to be synchronous since we can't do anything else until this finishes.
+     /// 当节点重新启动时，构造实例并返回从db读取的数据。 这可以保证我们在启动时只读取一次，
+    /// 如果读取失败，我们会感到恐慌。
+    /// 同步是有意义的，因为在完成之前我们不能做任何其他事情。
     fn start(config: &NodeConfig) -> (Arc<Self>, RecoveryData<T>)
     where
         Self: Sized;
@@ -62,22 +76,29 @@ pub trait PersistentStorage<T>: PersistentLivenessStorage + Send + Sync {
 
 /// The recovery data constructed from raw consensusdb data, it'll find the root value and
 /// blocks that need cleanup or return error if the input data is inconsistent.
+/// 从原始的consensusdb数据构造的恢复数据，如果输入数据不一致，它将找到需要清理或返回错误的根值和块。
+///
 #[derive(Debug)]
 pub struct RecoveryData<T> {
     // Safety data
+    // 安全数据
     state: ConsensusState,
     root: (Block<T>, QuorumCert, QuorumCert),
     // 1. the blocks guarantee the topological ordering - parent <- child.
     // 2. all blocks are children of the root.
+     // 1.块保证拓扑排序 - 父< - 子。
+    // 2.所有块都是根的子节点。
     blocks: Vec<Block<T>>,
     quorum_certs: Vec<QuorumCert>,
     blocks_to_prune: Option<Vec<HashValue>>,
 
     // Liveness data
+    // 活动数据
     highest_timeout_certificates: HighestTimeoutCertificates,
 
     // whether root is consistent with StateComputer, if not we need to do the state sync before
     // starting
+    // root是否与StateComputer一致，如果不是，我们需要在启动之前进行状态同步
     need_sync: bool,
 }
 
@@ -112,6 +133,7 @@ impl<T: Payload> RecoveryData<T> {
             &mut quorum_certs,
         ));
         // if the root is different than the LI(S).block, we need to sync before start
+        // 如果根与LI（S）.block不同，我们需要在开始之前同步
         let need_sync = root_from_storage != root.0.id();
         Ok(RecoveryData {
             state,
@@ -178,6 +200,24 @@ impl<T: Payload> RecoveryData<T> {
     /// during state synchronization. In this case LI(S) might not be found in the blocks of
     /// ConsensusDB: we're going to start with LI(C) and invoke state synchronizer in order to
     /// resume the synchronization.
+    ///
+    /// 查找根（最后提交的块）并将根块，QC返回到根块以及根块的分类帐信息，如果找不到则返回错误。
+    ///
+    /// LI（S）是由存储确定的最高已知分类帐信息。
+    /// LI（C）由ConsensusDB确定：它是由QC的分类账信息之一认证为最高的块ID。
+    ///
+    /// 我们保证一些不变量：
+    /// 1. LI（C）必须以块的形式存在
+    /// 2. LI（S）.block.round <= LI（C）.block.round
+    ///
+    /// 我们使用以下条件来确定根：
+    /// 1. LI（S）存在&& LI（S）是LI（C）的祖先，根据块，root = LI（S）
+    /// 2. else root = LI（C）
+    ///
+    /// 在典型情况下，在将此块提交到存储之前，证明块提交的QC将持久保存到ConsensusDB。 因此，
+    /// ConsensusDB包含对应于LI（S）id的块，它将成为根。
+    /// 此代码中添加了一个额外的复杂功能，以便在状态同步期间容忍潜在的故障。
+    /// 在这种情况下，可能在ConsensusDB的块中找不到LI（S）：我们将从LI（C）开始并调用状态同步器以恢复同步。
     fn find_root(
         blocks: &mut Vec<Block<T>>,
         quorum_certs: &mut Vec<QuorumCert>,
@@ -264,6 +304,7 @@ impl<T: Payload> RecoveryData<T> {
 }
 
 /// The proxy we use to persist data in libra db storage service via grpc.
+/// 我们用于通过grpc在libra db存储服务中保存数据的代理。
 pub struct StorageWriteProxy {
     db: Arc<ConsensusDB>,
 }
