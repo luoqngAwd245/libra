@@ -26,6 +26,7 @@ use tokio::runtime::TaskExecutor;
 use types::transaction::TransactionListWithProof;
 
 /// Used for synchronization between validators for committed states
+/// 用于提交状态的验证器之间的同步
 pub struct StateSynchronizer {
     synchronizer_to_coordinator: mpsc::UnboundedSender<CoordinatorMsg>,
     storage_read_client: Arc<dyn StorageRead>,
@@ -33,6 +34,7 @@ pub struct StateSynchronizer {
 
 impl StateSynchronizer {
     /// Setup state synchronizer. spawns coordinator and downloader routines on executor
+    /// 设置状态同步器。 在执行程序上生成协调器和下载程序
     pub fn new<E: ExecutorProxyTrait + 'static>(
         network: ConsensusNetworkSender,
         executor: TaskExecutor,
@@ -69,6 +71,7 @@ impl StateSynchronizer {
     }
 
     /// Sync validator's state up to given `version`
+    /// 将验证器的状态同步到给定的“版本”
     pub fn sync_to(&self, qc: QuorumCert) -> impl Future<Output = Result<SyncStatus>> {
         let mut sender = self.synchronizer_to_coordinator.clone();
         let (cb_sender, cb_receiver) = oneshot::channel();
@@ -82,6 +85,7 @@ impl StateSynchronizer {
     }
 
     /// Get a batch of transactions
+    /// 获得一批交易
     pub fn get_chunk(
         &self,
         start_version: u64,
@@ -112,6 +116,7 @@ impl StateSynchronizer {
 }
 
 /// Make the state synchronizer
+/// 创建状态同步器
 pub fn setup_state_synchronizer(
     network: ConsensusNetworkSender,
     executor: TaskExecutor,
