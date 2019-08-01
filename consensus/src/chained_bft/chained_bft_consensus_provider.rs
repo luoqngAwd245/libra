@@ -42,6 +42,7 @@ struct InitialSetup {
 }
 
 /// Supports the implementation of ConsensusProvider using LibraBFT.
+/// 使用LibraBFT 支持 ConsensusProvider的实现
 pub struct ChainedBftProvider {
     smr: ChainedBftSMR<Vec<SignedTransaction>, Author>,
     mempool_client: Arc<MempoolClient>,
@@ -109,9 +110,11 @@ impl ChainedBftProvider {
 
     /// Retrieve the initial "state" for consensus. This function is synchronous and returns after
     /// reading the local persistent store and retrieving the initial state from the executor.
+    /// 检索初始“状态”以达成共识。 此函数是同步的，并在读取本地持久存储并从执行程序检索初始状态后返回。
     fn initialize_setup(node_config: &mut NodeConfig) -> InitialSetup {
         // Keeping the initial set of validators in a node config is embarrassing and we should
         // all feel bad about it.
+         // 在节点配置中保留初始验证器集是令人尴尬的，我们都应该对它感到不好。
         let peer_id_str = node_config.base.peer_id.clone();
         let author =
             AccountAddress::try_from(peer_id_str).expect("Failed to parse peer id of a validator");
@@ -152,6 +155,7 @@ impl ChainedBftProvider {
 
     /// Choose a proposer that is going to be the single leader (relevant for a mock fixed proposer
     /// election only).
+     /// 选择一个将成为单一领导者的提议者（仅与模拟固定提议者选举相关）。
     fn choose_leader(initial_setup: &InitialSetup) -> Author {
         // As it is just a tmp hack function, pick the smallest PeerId to be a proposer.
         *initial_setup
