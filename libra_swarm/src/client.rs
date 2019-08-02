@@ -10,7 +10,7 @@ use std::{
     process::{Child, Command, Output, Stdio},
     sync::Arc,
 };
-
+/// 交互客户端
 pub struct InteractiveClient {
     client: Option<Child>,
 }
@@ -20,7 +20,7 @@ impl Drop for InteractiveClient {
         if self.client.is_none() {
             return;
         }
-        // Kill client process if still running.
+        // Kill client process if still running. 如果还在运行杀死进程
         let mut client = self.client.take().unwrap();
         match client.try_wait().unwrap() {
             Some(status) => {
@@ -39,6 +39,7 @@ impl Drop for InteractiveClient {
 }
 
 impl InteractiveClient {
+    //从继承io创建
     pub fn new_with_inherit_io(
         port: u16,
         faucet_key_file_path: &Path,
@@ -49,6 +50,8 @@ impl InteractiveClient {
         // workspace root and the function calling new_with_inherit_io isn't necessarily
         // running from that location, so if a relative path is passed, it wouldn't work
         // unless we convert it to an absolute path
+        // 我们需要在路径上调用canonicalize，因为我们从工作空间根目录运行客户端，并且调用new_with_inherit_io
+        // 的函数不一定从该位置运行，因此如果传递相对路径，除非我们将其转换为绝对路径，否则它将无法工作
         Self {
             client: Some(
                 Command::new(utils::get_bin("client"))
@@ -83,7 +86,7 @@ impl InteractiveClient {
             ),
         }
     }
-
+   //从管道io创建
     pub fn new_with_piped_io(
         port: u16,
         faucet_key_file_path: &Path,
@@ -94,6 +97,8 @@ impl InteractiveClient {
             /// Note: For easier debugging it's convenient to see the output
             /// from the client CLI. Comment the stdout/stderr lines below
             /// and enjoy pretty Matrix-style output.
+            /// 注意：为了便于调试，可以方便地查看客户端CLI的输出。 注释下面的stdout / stderr行，
+            /// 享受漂亮的Matrix风格输出。
             client: Some(
                 Command::new(utils::get_bin("client"))
                     .current_dir(utils::workspace_root())
