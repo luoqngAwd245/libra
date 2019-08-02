@@ -56,20 +56,20 @@ Changes to the project are proposed through pull requests. The general pull
 request workflow is as follows:
 通过拉取请求提出对项目的更改。 一般拉取请求工作流程如下：
 
-1. Fork the repo and create a topic branch off of `master`.
-1. fork the repo并从`master`创建一个主题分支。
+1. Fork the repo and create a topic branch off of `master`. 
+   fork the repo并从`master`创建一个主题分支。
 2. If you have added code that should be tested, add unit tests.
-2. 如果你添加了代码，这些代码需要被测试过，同时加上测试用例
+   如果你添加了代码，这些代码需要被测试过，同时加上测试用例
 3. If you have changed APIs, update the documentation. Make sure the
-   documentation builds.
-3. 如果您更改了API，请更新文档。 确保文档构建。   
+   documentation builds. 
+   如果您更改了API，请更新文档。 确保文档构建。   
 4. Ensure all tests and lints pass on each and every commit that is part of
    your pull request.
-4. 确保所有测试和lint都传递作为pull请求一部分的每个提交。   
+   确保所有测试和lint都传递作为pull请求一部分的每个提交。   
 5. If you haven't already, complete the Contributor License Agreement (CLA).
-5. 如果您还没有，请完成“贡献者许可协议”（CLA）。
+   如果您还没有，请完成“贡献者许可协议”（CLA）。
 6. Submit your pull request.
-6. 提交你的拉取请求
+   提交你的拉取请求
 
 ## Authoring Clean Commits 编写清洁提交
 
