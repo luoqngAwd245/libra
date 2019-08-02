@@ -95,7 +95,7 @@ impl LibraNode {
                 .stdout(log_file.try_clone()?)
                 .stderr(log_file.try_clone()?);
         };
-        // 启动节点进程
+        // 启动节点进程，调用libra_node可执行程序启动子进程
         let mut node = node_command
             .spawn()
             .context("Error launching node process")?;
@@ -110,7 +110,7 @@ impl LibraNode {
                 Box::new(node.stderr.take().expect("Can't get child stderr")),
                 prefix,
             );
-            // 启动日志进程
+            // 启动日志线程
             Some(tee.start())
         } else {
             None
