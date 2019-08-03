@@ -32,6 +32,7 @@ use storage_proto::proto::{
 use types::proto::get_with_proof::{UpdateToLatestLedgerRequest, UpdateToLatestLedgerResponse};
 
 /// Starts storage service according to config.
+/// 启动存储服务
 pub fn start_storage_service(config: &NodeConfig) -> ServerHandle {
     let (storage_service, shutdown_receiver) = StorageService::new(&config.storage.get_dir());
     spawn_service_thread_with_drop_closure(
@@ -51,6 +52,9 @@ pub fn start_storage_service(config: &NodeConfig) -> ServerHandle {
 ///
 /// It serves [`LibraDB`] APIs over the network. See API documentation in [`storage_proto`] and
 /// [`LibraDB`].
+/// 存储[GRPC]（http://grpc.io）服务的实现。
+///
+/// 它通过网络提供[`LibraDB`] API。 请参阅[`storage_proto`]和[`LibraDB`]中的API文档。
 #[derive(Clone)]
 pub struct StorageService {
     db: Arc<LibraDBWrapper>,
@@ -66,6 +70,14 @@ pub struct StorageService {
 /// See these links for more details.
 ///   https://github.com/pingcap/grpc-rs/issues/227
 ///   https://github.com/facebook/rocksdb/issues/649
+/// 当销毁GRPC服务器时，我们要等到LibraDB首先被销毁，因此GRPC线程保持的RocksDB实例在GRPC服务器的主要
+/// 功能完成之前关闭。 否则，如果我们不手动保证这一点，在GRPC服务器的主函数返回后，某些线程可能仍处于
+/// 活动状态，并持有指向LibraDB的Arc指针。使用带有通道的这个包装器为我们提供了一种方式来通知接收端
+/// 所有GRPC服务器线程都已连接，因此RocksDB已关闭。
+///
+///  有关详细信息，请参阅这些链接
+/// https://github.com/pingcap/grpc-rs/issues/227
+/// https://github.com/facebook/rocksdb/issues/649
 struct LibraDBWrapper {
     db: Option<LibraDB>,
     shutdown_sender: Mutex<mpsc::Sender<()>>,
@@ -88,8 +100,10 @@ impl LibraDBWrapper {
 impl Drop for LibraDBWrapper {
     fn drop(&mut self) {
         // Drop inner LibraDB instance.
+        // 销毁内部LibraDB实例
         self.db.take();
         // Send the shutdown message after DB is dropped.
+        // DB销毁后发送shutdown消息
         self.shutdown_sender
             .lock()
             .expect("Failed to lock mutex.")
@@ -124,6 +138,21 @@ impl StorageService {
     ///
     ///    // LibraDB instance is guaranteed to be properly dropped at this point.
     /// ```
+    /// 这将在`path`处打开一个[`LibraDB`]并返回一个为它服务的[`StorageService`]实例。
+    ///
+    /// 还返回通道的接收方，通过该通道接收通知后，包括底层[`LibraDB`]实例的服务使用的所有资源都被完全丢弃。
+    ///
+    ///例：
+    ///```no_run，
+    /// #use storage_service :: *;
+    /// ＃use std :: path :: Path;
+    /// let（service，shutdown_receiver）= StorageService :: new（＆Path :: new（“path / to / db”））;
+    ///
+    /// drop（service）;
+    /// shutdown_receiver.recv（）。expect（“recv（）应该成功。”）;
+    ///
+    /// //保证LibraDB实例在此时正确删除。
+    ///```
     pub fn new<P: AsRef<Path>>(path: &P) -> (Self, mpsc::Receiver<()>) {
         let (db_wrapper, shutdown_receiver) = LibraDBWrapper::new(path);
         (
