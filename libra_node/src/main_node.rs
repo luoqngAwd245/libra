@@ -53,7 +53,7 @@ impl Drop for LibraHandle {
         self.consensus.stop();
     }
 }
-
+// 设置AC
 fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
     let env = Arc::new(
         EnvBuilder::new()
@@ -64,19 +64,20 @@ fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
     let port = config.admission_control.admission_control_service_port;
 
     // Create mempool client
+    //创建内存池客户端
     let connection_str = format!("localhost:{}", config.mempool.mempool_service_port);
     let env2 = Arc::new(EnvBuilder::new().name_prefix("grpc-ac-mem-").build());
     let mempool_client = Arc::new(MempoolClient::new(
         ChannelBuilder::new(env2).connect(&connection_str),
     ));
 
-    // Create storage read client
+    // Create storage read client 创建存储读客户端
     let storage_client: Arc<dyn StorageRead> = Arc::new(StorageReadServiceClient::new(
         Arc::new(EnvBuilder::new().name_prefix("grpc-ac-sto-").build()),
         "localhost",
         config.storage.port,
     ));
-
+    //创建虚拟机验证者
     let vm_validator = Arc::new(VMValidator::new(&config, Arc::clone(&storage_client)));
 
     let handle = AdmissionControlService::new(
@@ -88,6 +89,7 @@ fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
             .need_to_check_mempool_before_validation,
     );
     let service = create_admission_control(handle);
+    //创建AC服务
     let server = ServerBuilder::new(Arc::clone(&env))
         .register_service(service)
         .bind(config.admission_control.address.clone(), port)
@@ -95,23 +97,26 @@ fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
         .expect("Unable to create grpc server");
 
     let connection_str = format!("localhost:{}", port);
+    // AC 客户端
     let client = AdmissionControlClient::new(ChannelBuilder::new(env).connect(&connection_str));
     (server, client)
 }
-
+// 设置执行主键
 fn setup_executor(config: &NodeConfig) -> ::grpcio::Server {
     let client_env = Arc::new(EnvBuilder::new().name_prefix("grpc-exe-sto-").build());
+    //存储读客户端
     let storage_read_client = Arc::new(StorageReadServiceClient::new(
         Arc::clone(&client_env),
         &config.storage.address,
         config.storage.port,
     ));
+    //存储写客户端
     let storage_write_client = Arc::new(StorageWriteServiceClient::new(
         Arc::clone(&client_env),
         &config.storage.address,
         config.storage.port,
     ));
-
+    //new执行组件服务
     let handle = ExecutionService::new(storage_read_client, storage_write_client, config);
     let service = execution_grpc::create_execution(handle);
     ::grpcio::ServerBuilder::new(Arc::new(EnvBuilder::new().name_prefix("grpc-exe-").build()))
@@ -120,10 +125,10 @@ fn setup_executor(config: &NodeConfig) -> ::grpcio::Server {
         .build()
         .expect("Unable to create grpc server")
 }
-
+//创建调试接口
 fn setup_debug_interface(config: &NodeConfig) -> ::grpcio::Server {
     let env = Arc::new(EnvBuilder::new().name_prefix("grpc-debug-").build());
-    // Start Debug interface
+    // Start Debug interface 启动调试接口
     let debug_service =
         node_debug_interface_grpc::create_node_debug_interface(NodeDebugService::new());
     ::grpcio::ServerBuilder::new(env)
@@ -135,7 +140,7 @@ fn setup_debug_interface(config: &NodeConfig) -> ::grpcio::Server {
         .build()
         .expect("Unable to create grpc server")
 }
-
+//设置网络
 pub fn setup_network(
     config: &mut NodeConfig,
 ) -> (
@@ -150,6 +155,7 @@ pub fn setup_network(
     let peer_id = PeerId::try_from(config.base.peer_id.clone()).expect("Invalid PeerId");
     let listen_addr = config.network.listen_address.clone();
     let advertised_addr = config.network.advertised_address.clone();
+    // 信任节点
     let trusted_peers = config
         .base
         .trusted_peers
@@ -166,6 +172,7 @@ pub fn setup_network(
             )
         })
         .collect();
+    //种子节点
     let seed_peers = config
         .network
         .seed_peers
@@ -174,11 +181,14 @@ pub fn setup_network(
         .into_iter()
         .map(|(peer_id, addrs)| (peer_id.try_into().expect("Invalid PeerId"), addrs))
         .collect();
+    // 网络签名私钥
     let network_signing_private = config.base.peer_keypairs.take_network_signing_private()
         .expect("Failed to move network signing private key out of NodeConfig, key not set or moved already");
-
+    // 网络签名公钥 
     let network_signing_public: Ed25519PublicKey = (&network_signing_private).into();
+    // 网络身份keypair
     let network_identity_keypair = config.base.peer_keypairs.get_network_identity_keypair();
+     // （（内存网络发送者，内存网络事件），（一致性网络发送者，一致性网络事件））
     let (
         (mempool_network_sender, mempool_network_events),
         (consensus_network_sender, consensus_network_events),
@@ -214,11 +224,12 @@ pub fn setup_network(
         runtime,
     )
 }
-
+// 设置环境，启动服务
 pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClient, LibraHandle) {
     crash_handler::setup_panic_handler();
 
     let mut instant = Instant::now();
+    //启动存储服务
     let storage = start_storage_service(&node_config);
     debug!(
         "Storage service started in {} ms",
@@ -226,6 +237,7 @@ pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClien
     );
 
     instant = Instant::now();
+    //启动执行组件
     let execution = ServerHandle::setup(setup_executor(&node_config));
     debug!(
         "Execution service started in {} ms",
@@ -233,6 +245,7 @@ pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClien
     );
 
     instant = Instant::now();
+    //启动网络服务
     let (
         (mempool_network_sender, mempool_network_events),
         (consensus_network_sender, consensus_network_events),
@@ -241,11 +254,13 @@ pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClien
     debug!("Network started in {} ms", instant.elapsed().as_millis());
 
     instant = Instant::now();
+     //启动AC
     let (ac_server, ac_client) = setup_ac(&node_config);
     let ac = ServerHandle::setup(ac_server);
     debug!("AC started in {} ms", instant.elapsed().as_millis());
 
     instant = Instant::now();
+    //启动内存池
     let mempool =
         MempoolRuntime::bootstrap(&node_config, mempool_network_sender, mempool_network_events);
     debug!("Mempool started in {} ms", instant.elapsed().as_millis());
@@ -254,6 +269,7 @@ pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClien
 
     let metrics_port = node_config.debug_interface.metrics_server_port;
     let metric_host = node_config.debug_interface.address.clone();
+    // 启动度量服务
     thread::spawn(move || metric_server::start_server((metric_host.as_str(), metrics_port)));
 
     instant = Instant::now();
@@ -262,6 +278,7 @@ pub fn setup_environment(node_config: &mut NodeConfig) -> (AdmissionControlClien
         consensus_network_sender,
         consensus_network_events,
     );
+    //启动一致性服务
     consensus_provider
         .start()
         .expect("Failed to start consensus. Can't proceed.");
