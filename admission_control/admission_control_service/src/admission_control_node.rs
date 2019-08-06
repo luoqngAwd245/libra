@@ -31,7 +31,7 @@ impl Drop for AdmissionControlNode {
 
 impl AdmissionControlNode {
     /// Construct a new AdmissionControlNode instance using NodeConfig.
-     /// 用节点配置构建一个AC节点的实例
+    /// 用节点配置构建一个AC节点的实例
     pub fn new(node_config: NodeConfig) -> Self {
         AdmissionControlNode { node_config }
     }
@@ -80,7 +80,7 @@ impl AdmissionControlNode {
         mp_client: Arc<M>,
         storage_client: Option<Arc<StorageReadServiceClient>>,
     ) -> Result<()> {
-        // create storage client if doesn't exist
+        // create storage client if doesn't exist 创建存储客户端如果不存在
         let storage_client: Arc<dyn StorageRead> = match storage_client {
             Some(c) => c,
             None => Arc::new(StorageReadServiceClient::new(

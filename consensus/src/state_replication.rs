@@ -110,6 +110,8 @@ pub trait StateComputer: Send + Sync {
     /// How to execute a sequence of transactions and obtain the next state. While some of the
     /// transactions succeed, some of them can fail.
     /// In case all the transactions are failed, new_state_id is equal to the previous state id.
+    /// 如何执行一系列事务并获得下一个状态。 虽然有些交易成功，但有些交易可能会失败。
+    /// 如果所有事务都失败，则new_state_id等于先前的状态id。
     fn compute(
         &self,
         // The id of a parent block, on top of which the given transactions should be executed.

@@ -20,12 +20,12 @@ pub trait ConsensusProvider {
     /// The function returns after consensus has recovered its initial state,
     /// and has established the required connections (e.g., to mempool and
     /// executor).
-    /// spawn 新的进程，启动一致性操作（取回交易，一致性协议， 提交交易，更新交易状态在内存池等等）
+    /// spawn 新的线程，启动一致性操作（取回交易，一致性协议， 提交交易，更新交易状态在内存池等等）
     /// 该函数在共识恢复其初始状态后返回，并已建立所需的连接（例如，到mempool和executor）。
     fn start(&mut self) -> Result<()>;
 
     /// Stop the consensus operations. The function returns after graceful shutdown.
-       ///终止一致性操作。该函数在正常关闭后返回。
+    ///终止一致性操作。该函数在正常关闭后返回。
     fn stop(&mut self);
 }
 

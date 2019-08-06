@@ -10,6 +10,7 @@ use std::{
     process::{Child, Command, Output, Stdio},
     sync::Arc,
 };
+
 /// 交互客户端
 pub struct InteractiveClient {
     client: Option<Child>,
@@ -86,7 +87,7 @@ impl InteractiveClient {
             ),
         }
     }
-   //从管道io创建
+    //从管道io创建
     pub fn new_with_piped_io(
         port: u16,
         faucet_key_file_path: &Path,

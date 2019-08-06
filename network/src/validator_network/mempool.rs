@@ -105,6 +105,10 @@ impl MempoolNetworkSender {
     /// Currently, the returned Future simply resolves when the message has been
     /// enqueued on the network actor's event queue. It therefore makes no
     /// reliable delivery guarantees.
+    ///向远程对等“收件人”发送即发即弃“直接发送”消息。
+    ///
+    ///目前，返回的Future只是在消息发布时解析在网络actor的事件队列中排队。 因此它没有
+    ///可靠的送货保证。
     pub async fn send_to(
         &mut self,
         recipient: PeerId,

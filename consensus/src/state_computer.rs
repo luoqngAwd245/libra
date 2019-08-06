@@ -122,7 +122,7 @@ impl StateComputer for ExecutionProxy {
     }
 
     /// Send a successful commit. A future is fulfilled when the state is finalized.
-    /// 发送成功提交。 当状态最终确定时，future就会实现
+    /// 发送成功提交。 当状态最终确定时，future就会实现。
     fn commit(
         &self,
         commit: LedgerInfoWithSignatures,
@@ -135,6 +135,7 @@ impl StateComputer for ExecutionProxy {
         match self.execution.commit_block_async(&commit_req) {
             Ok(receiver) => {
                 // convert from grpcio enum to failure::Error
+                // 从grpcio枚举转换为失败::错误
                 async move {
                     match receiver.compat().await {
                         Ok(response) => {

@@ -39,9 +39,10 @@ impl Drop for LibraNode {
     //当LibraNode结构出了作用域，我们需要终止子进程
     fn drop(&mut self) {
         // check if the process has already been terminated
+        //检查进程是否已经终止
         match self.node.try_wait() {
             // The child process has already terminated, perhaps due to a crash
-            //检查进程是否已经终止
+            //子进程已经终止，可能是由于崩溃
             Ok(Some(_)) => {}
 
             // The node is still running so we need to attempt to kill it
@@ -257,8 +258,8 @@ pub enum SwarmLaunchFailure {
     /// 等待节点启动超时
     #[fail(display = "Node launch check timeout")]
     LaunchTimeout,
-    /// Node return status indicates a crash
     /// 节点返回状态表示崩溃
+    /// Node return status indicates a crash
     #[fail(display = "Node crash")]
     NodeCrash,
     /// Timeout while waiting for the nodes to report that they're all interconnected

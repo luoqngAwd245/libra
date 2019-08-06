@@ -162,6 +162,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         };
 
         // Proposal generator will ensure that at most one proposal is generated per round
+        // 提案生成器将确保每轮最多生成一个提案
         let proposal = match self
             .proposal_generator
             .generate_proposal(
@@ -221,7 +222,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         // Pacemaker is going to be updated with all the proposal certificates later,
         // but it's known that the pacemaker's round is not going to decrease so we can already
         // filter out the proposals from old rounds.
-        	// Pacemaker将在稍后更新所有提案证书，
+	// Pacemaker将在稍后更新所有提案证书，
          //但是众所周知，起搏器的回合不会减少，所以我们已经可以了
          //过滤旧轮次的提案。
         let current_round = self.pacemaker.current_round();
@@ -354,13 +355,14 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
     /// Takes mutable reference to avoid race with other processing and perform state
     /// synchronization, then completes processing proposal in dedicated task
-     /// 采用可变引用以避免与其他处理竞争并执行状态同步，然后在专用任务中完成处理提议
+    /// 采用可变引用以避免与其他处理竞争并执行状态同步，然后在专用任务中完成处理提议
+    ///
     pub async fn sync_and_process_proposal(
         &mut self,
         deadline: Instant,
         proposal: ProposalInfo<T, P>,
     ) {
-        // check if we still need sync
+        // check if we still need sync 检查我们是否还需要同步
         if let Err(e) = self
             .sync_manager
             .sync_to(
@@ -449,7 +451,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         // Stop voting at this round, persist the consensus state to support restarting from
         // a recent round (i.e. > the last vote round)  and then send the highest quorum
         // certificate known
-        /在此轮停止投票，坚持共识状态以支持重启
+	//在此轮停止投票，坚持共识状态以支持重启
          //最近一轮（即>最后一轮投票），然后发送最高法定人数
          //证书已知
         let consensus_state = self
@@ -494,9 +496,10 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// 3. In case a validator chooses to vote, send the vote to the representatives at the next
     /// position.
     /// 此功能处理被选为其轮次代表的提案：
-    /// 1.将其添加到块商店。
+    /// 1.将其添加到块存储。
     /// 2 .按照安全规则尝试投票。
     /// 3.如果验证人选择投票，则将投票发送给下一个位置的代表。
+
     pub async fn process_winning_proposal(&self, proposal: ProposalInfo<T, P>) {
         let qc = proposal.proposal.quorum_cert();
         let update_res = self.safety_rules.write().unwrap().update(qc);
@@ -527,7 +530,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
         // Checking pacemaker round again, because multiple proposal can now race
         // during async block retrieval
-        //再次检查心脏起搏器，因为多个提案现在可以竞赛
+	//再次检查心脏起搏器，因为多个提案现在可以竞赛
          //在异步块检索期间
         if self.pacemaker.current_round() != block.round() {
             debug!(
@@ -691,6 +694,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         {
             VoteReceptionResult::DuplicateVote => {
                 // This should not happen in general.
+                // 这不应该发生。
                 security_log(SecurityEvent::DuplicateConsensusVote)
                     .error(VoteReceptionResult::DuplicateVote)
                     .data(vote)
@@ -890,6 +894,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     }
 
     /// Inspect the current consensus state.
+    ///  检查目前的共识状态。
     #[cfg(test)]
     pub fn consensus_state(&self) -> ConsensusState {
         self.safety_rules.read().unwrap().consensus_state()

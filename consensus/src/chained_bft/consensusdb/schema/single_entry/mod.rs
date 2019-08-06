@@ -9,6 +9,14 @@
 //! |<-------key------->|<-----value----->|
 //! | single entry key  | raw value bytes |
 //! ```
+//! 此模块为任何单项数据定义物理存储架构。
+//!
+//! 对于每种类型的数据，此列族中只有一行。
+//! 密钥将是指定数据类型的序列化枚举类型，不应具有任何含义并可以使用。
+//! ```text
+//! |<-------key------->|<-----value----->|
+//! | single entry key  | raw value bytes |
+//! ```
 
 use super::{ensure_slice_len_eq, SINGLE_ENTRY_CF_NAME};
 use byteorder::ReadBytesExt;
@@ -32,8 +40,10 @@ define_schema!(
 #[repr(u8)]
 pub enum SingleEntryKey {
     // Used to store ConsensusState
+    // 用于存储一致性状态
     ConsensusState = 0,
     // Used to store the highest timeout certificates
+    // 用于存储最高超时证书
     HighestTimeoutCertificates = 1,
 }
 

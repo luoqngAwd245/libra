@@ -23,6 +23,7 @@ mod vm_validator_test;
 pub trait TransactionValidation: Send + Sync {
     type ValidationInstance: VMVerifier;
     /// Validate a txn from client
+    /// 从客户端验证交易
     fn validate_transaction(
         &self,
         _txn: SignedTransaction,
@@ -61,9 +62,18 @@ impl TransactionValidation for VMValidator {
         // validator set.
         // 3) Create VerifiedStateView with verified state
         // root.
+        // 对于交易验证，这里有两种选择
+        // 1.信任的存储：没有必要从存储获取根hash。我们将创建另外一个和`VerifiedStateView`相似的结构
+        // 这个结构实现了`StateView`但是不做验证
+        // 2.不信任的存储。需要更多的工作：
+        // 1) AC 必须有验证节点的组信息
+        // 2）从事务信息中获取state_root，可以使用验证器集的签名进行验证。
+        // 3）使用验证状态创建VerifiedStateView
+
 
         // Just ask something from storage. It doesn't matter what it is -- we just need the
         // transaction info object in account state proof which contains the state root hash.
+        // 从存储中询问一些东西。它是什么并不重要 - 我们只需要在帐户状态证明中包含状态根哈希的事务信息对象。
         let address = AccountAddress::new([0xff; ADDRESS_LENGTH]);
         let item = RequestItem::GetAccountState { address };
 
@@ -104,6 +114,8 @@ impl TransactionValidation for VMValidator {
 
 /// read account state
 /// returns account's current sequence number and balance
+/// 读取账户状态
+/// 返回状态当前序列号和余额
 pub async fn get_account_state(
     storage_read_client: Arc<dyn StorageRead>,
     address: AccountAddress,

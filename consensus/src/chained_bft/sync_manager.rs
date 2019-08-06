@@ -168,6 +168,7 @@ where
             {
                 // This should not be possible because that would mean we have circular
                 // dependency between signed blocks
+                // 这应该是不可能的，因为这意味着我们在签名块之间具有循环依赖性
                 panic!(
                     "Can not re-acquire lock for block {} during fetch_quorum_cert",
                     retrieve_qc.certified_block_id()

@@ -68,7 +68,7 @@ impl VoteInfo {
 pub enum ProposalReject {
     /// This proposal's round is less than round of preferred block.
     /// Returns the id of the preferred block.
-     /// 该提案的轮次小于优选块的轮次。
+    /// 该提案的轮次小于优选块的轮次。
     /// 返回首选块的id。
     #[fail(
         display = "Proposal's round is lower than round of preferred block at round {:?}",
@@ -157,20 +157,20 @@ impl ConsensusState {
     }
 
     /// Returns the last round that was voted on
-     /// 返回投票的最后一轮
+    /// 返回投票的最后一轮
     pub fn last_vote_round(&self) -> Round {
         self.last_vote_round
     }
 
     /// Returns the last committed round
-     /// 返回最后一个提交的回合    
+    /// 返回最后一个提交的回合
     #[cfg(test)]
     pub fn last_committed_round(&self) -> Round {
         self.last_committed_round
     }
 
     /// Returns the preferred block round
-   /// 返回首选的块轮
+    /// 返回首选的块轮
     pub fn preferred_block_round(&self) -> Round {
         self.preferred_block_round
     }
@@ -266,7 +266,7 @@ impl<T: Payload> SafetyRules<T> {
             // double commit.
             // Because we only persist the ConsensusState before sending out the vote, it could
             // be lagged behind the reality if we crash between committing and sending the vote.
-             // 我们检查树的根而不是最后一次提交，以避免双重提交。
+            // 我们检查树的根而不是最后一次提交，以避免双重提交。
             // 因为我们只是在发出投票之前坚持ConsensusState，如果我们在提交和投票之间崩溃，它可能会落后于现实。
             if committed_block.round() > self.block_tree.root().round() {
                 self.state.last_committed_round = committed_block.round();
@@ -306,7 +306,7 @@ impl<T: Payload> SafetyRules<T> {
     }
 
     /// Return the highest known committed round
-     /// 返回已知最高的承诺回合
+    /// 返回已知最高的承诺回合
     pub fn last_committed_round(&self) -> Round {
         self.state.last_committed_round
     }
@@ -332,7 +332,7 @@ impl<T: Payload> SafetyRules<T> {
     /// sent).
     /// Requires that all the ancestors of the block are available for at least up to the last
     /// committed block, might panic otherwise.
-     /// 尝试根据投票规则对特定提案进行投票。
+    /// 尝试根据投票规则对特定提案进行投票。
     /// 然后返回的值将用于发送投票或不执行任何操作。
     ///  在投票的情况下，返回克隆的共识状态（在投票发送之前保持持久）。
     /// 要求块的所有祖先至少可用于最后一个提交的块，否则可能会发生混乱。

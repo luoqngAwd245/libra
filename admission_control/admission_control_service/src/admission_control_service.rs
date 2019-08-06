@@ -60,7 +60,7 @@ pub struct AdmissionControlService<M, V> {
     /// 标志位暗示我们是否需要检查内存池在验证之前，如果验证失败销毁txn
     need_to_check_mempool_before_validation: bool,
 }
-
+// MempoolClientTrait + 'static, VMValidator
 impl<M: 'static, V> AdmissionControlService<M, V>
 where
     M: MempoolClientTrait,
@@ -143,7 +143,9 @@ where
             response.set_vm_status(validation_status.into_proto());
             return Ok(response);
         }
+        // 签名交易对应的账户地址
         let sender = signed_txn.sender();
+        // 获取账户状态
         let account_state = block_on(get_account_state(self.storage_read_client.clone(), sender));
         let mut add_transaction_request = AddTransactionWithValidationRequest::new();
         add_transaction_request.signed_txn = req.signed_txn.clone();

@@ -44,7 +44,7 @@ pub struct BlockTree<T> {
     /// 总共1个id_to_child条目。
     id_to_child: HashMap<HashValue, Vec<Arc<Block<T>>>>,
     /// Mapping between proposals(Block) to execution results.
-    // 提案（块）与执行结果之间的映射。
+    /// 提案（块）与执行结果之间的映射。
     id_to_state: HashMap<HashValue, ExecutedState>,
     /// Keeps the state compute results of the executed blocks.
     /// The state compute results is calculated for all the pending blocks prior to insertion to
@@ -62,7 +62,7 @@ pub struct BlockTree<T> {
      /// 经认证的最高圆形块
     highest_certified_block: Arc<Block<T>>,
     /// The quorum certificate of highest_certified_block
-    // highest_certified_block的仲裁证书
+    /// highest_certified_block的仲裁证书
     highest_quorum_cert: Arc<QuorumCert>,
     /// The quorum certificate that carries a highest ledger info
     /// 具有最高分类帐信息的仲裁证书
@@ -331,7 +331,7 @@ where
             );
             // Note that the block might not be present locally, in which case we cannot calculate
             // time between block creation and qc
-             // 请注意，块可能不在本地存在，在这种情况下，我们无法计算块创建和qc之间的时间
+            // 请注意，块可能不在本地存在，在这种情况下，我们无法计算块创建和qc之间的时间
             if let Some(block) = self.get_block(block_id) {
                 if let Some(time_to_qc) = duration_since_epoch()
                     .checked_sub(Duration::from_micros(block.timestamp_usecs()))
@@ -500,11 +500,13 @@ where
     }
 
     /// Returns the number of child links in the tree
+    /// 返回树中子链接的数量
     pub(super) fn child_links(&self) -> usize {
         self.len() - 1
     }
 
     /// The number of pruned blocks that are still available in memory
+    /// 内存中仍可用的已修剪块数
     pub(super) fn pruned_blocks_in_mem(&self) -> usize {
         self.pruned_block_ids.len()
     }

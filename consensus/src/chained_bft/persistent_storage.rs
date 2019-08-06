@@ -27,6 +27,7 @@ pub trait PersistentLivenessStorage: Send + Sync {
     /// Persist the highest timeout certificate for improved liveness - proof for other replicas
     /// to jump to this round
     /// 坚持最高超时证书以提高活力 - 其他复制品的证据可以跳转到这一轮
+
     fn save_highest_timeout_cert(
         &self,
         highest_timeout_certs: HighestTimeoutCertificates,
@@ -59,14 +60,14 @@ pub trait PersistentStorage<T>: PersistentLivenessStorage + Send + Sync {
     fn prune_tree(&self, block_ids: Vec<HashValue>) -> Result<()>;
 
     /// Persist the consensus state.
-     /// 坚持共识状态。
+    /// 坚持共识状态。
     fn save_consensus_state(&self, state: ConsensusState) -> Result<()>;
 
     /// When the node restart, construct the instance and returned the data read from db.
     /// This could guarantee we only read once during start, and we would panic if the
     /// read fails.
     /// It makes sense to be synchronous since we can't do anything else until this finishes.
-     /// 当节点重新启动时，构造实例并返回从db读取的数据。 这可以保证我们在启动时只读取一次，
+    /// 当节点重新启动时，构造实例并返回从db读取的数据。 这可以保证我们在启动时只读取一次，
     /// 如果读取失败，我们会感到恐慌。
     /// 同步是有意义的，因为在完成之前我们不能做任何其他事情。
     fn start(config: &NodeConfig) -> (Arc<Self>, RecoveryData<T>)
@@ -86,7 +87,7 @@ pub struct RecoveryData<T> {
     root: (Block<T>, QuorumCert, QuorumCert),
     // 1. the blocks guarantee the topological ordering - parent <- child.
     // 2. all blocks are children of the root.
-     // 1.块保证拓扑排序 - 父< - 子。
+    // 1.块保证拓扑排序 - 父< - 子。
     // 2.所有块都是根的子节点。
     blocks: Vec<Block<T>>,
     quorum_certs: Vec<QuorumCert>,

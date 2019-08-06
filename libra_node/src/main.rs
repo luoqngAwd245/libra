@@ -10,6 +10,7 @@ use std::sync::{
     Arc,
 };
 
+//注冊信号
 fn register_signals(term: Arc<AtomicBool>) {
     for signal in &[
         signal_hook::SIGTERM,

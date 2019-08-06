@@ -90,7 +90,7 @@ pub static ref STATE_SYNC_COUNT: IntCounter = OP_COUNTERS.counter("state_sync_co
 pub static ref STATE_SYNC_TXN_REPLAYED: IntCounter = OP_COUNTERS.counter("state_sync_txns_replayed");
 
 /// Count the number of block retrieval requests issued since last restart.
-/// 计算自上次重启以来发出的块检索请求的数量    
+/// 计算自上次重启以来发出的块检索请求的数量。
 pub static ref BLOCK_RETRIEVAL_COUNT: IntCounter = OP_COUNTERS.counter("block_retrieval_count");
 
 /// Histogram of block retrieval duration.
@@ -115,7 +115,7 @@ pub static ref CURRENT_EPOCH_QUORUM_SIZE: IntGauge = OP_COUNTERS.gauge("current_
 
 
 //////////////////////
-// BLOCK STORE COUNTERS 块存储计数器
+// BLOCK STORE COUNTERS 区块存储计数器
 //////////////////////
 /// Counter for the number of blocks in the block tree (including the root).
 /// In a "happy path" with no collisions and timeouts, should be equal to 3 or 4.

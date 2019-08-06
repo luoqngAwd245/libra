@@ -8,6 +8,13 @@
 //! |<---key---->|<----value--->|
 //! | block_hash |  QuorumCert  |
 //! ```
+//! 此模块定义（块的）共识仲裁证书的物理存储架构。
+//!
+//! 由block_hash标识的序列化仲裁证书字节。
+//! ```text
+//! |<---key---->|<----value--->|
+//! | block_hash |  QuorumCert  |
+//! ```
 
 use super::QC_CF_NAME;
 use crate::chained_bft::consensus_types::quorum_cert::QuorumCert;

@@ -211,6 +211,7 @@ impl TimelineIndex {
     }
 
     /// add transaction to index
+    /// 添加交易到索引
     pub(crate) fn insert(&mut self, txn: &mut MempoolTransaction) {
         self.timeline.insert(
             self.timeline_id,
@@ -221,6 +222,7 @@ impl TimelineIndex {
     }
 
     /// remove transaction from index
+    /// 从索引移除交易
     pub(crate) fn remove(&mut self, txn: &MempoolTransaction) {
         if let TimelineState::Ready(timeline_id) = txn.timeline_state {
             self.timeline.remove(&timeline_id);

@@ -41,9 +41,10 @@ pub mod block_test;
 #[derive(Debug)]
 pub enum BlockVerificationError {
     /// The verification of quorum cert of this block failed.
-     /// 验证此块的仲裁证书失败。
+    /// 验证此块的仲裁证书失败。
     QCVerificationError(VoteMsgVerificationError),
     /// The signature verification of this block failed.
+    /// 此块的签名验证失败。
     SigVerifyError,
 }
 
@@ -101,10 +102,10 @@ pub struct Block<T> {
     timestamp_usecs: u64,
     /// Contains the quorum certified ancestor and whether the quorum certified ancestor was
     /// voted on successfully
-     /// 包含法定人数认证的祖先以及法定人数认证的祖先是否成功投票
+    /// 包含法定人数认证的祖先以及法定人数认证的祖先是否成功投票
     quorum_cert: QuorumCert,
     /// Author of the block that can be validated by the author's public key and the signature
-     /// 可以通过作者的公钥和签名验证的块的作者
+    /// 可以通过作者的公钥和签名验证的块的作者
     author: Author,
     /// Signature that the hash of this block has been authored by the owner of the private key
     /// 签名该块的哈希值是由私钥的所有者创作的

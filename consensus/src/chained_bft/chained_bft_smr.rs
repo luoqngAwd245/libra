@@ -59,7 +59,7 @@ pub struct ChainedBftSMRConfig {
     /// 在从块存储区清除它们之前，请保持此数量的已提交块。
     pub max_pruned_blocks_in_mem: usize,
     /// Initial timeout for pacemaker
-     /// 起搏器的初始超时
+    /// 起搏器的初始超时
     pub pacemaker_initial_timeout: Duration,
     /// Contiguous rounds for proposer
     /// 提议者的连续轮次
@@ -86,6 +86,7 @@ impl ChainedBftSMRConfig {
 /// ConsensusProvider for the e2e flow.
 /// ChainedBFTSmr是生成组件（BLockStore，Proposer等）并启动驱动程序的组件。 ChainedBftSMR实现
 /// StateMachineReplication，它将被ConsensusProvider用于e2e流。
+
 pub struct ChainedBftSMR<T, P> {
     author: P,
     // TODO [Reconfiguration] quorum size is just a function of current validator set.
@@ -186,7 +187,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             guard.process_new_round_event(new_round_event).await;
         }
     }
-
+//处理协议
     async fn process_proposals(
         executor: TaskExecutor,
         mut receiver: channel::Receiver<ProposalInfo<T, P>>,
@@ -198,6 +199,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
                 ProcessProposalResult::Done(_) => (),
                 // Spawn a new task that would start retrieving the missing
                 // blocks in the background.
+                // 产生一个新任务，开始在后台检索丢失的块。
                 ProcessProposalResult::NeedFetch(deadline, proposal) => executor.spawn(
                     Self::fetch_and_process_proposal(
                         Arc::clone(&event_processor),
@@ -210,6 +212,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
                 ),
                 // Spawn a new task that would start state synchronization
                 // in the background.
+                // 产生一个新任务，在后台启动状态同步。
                 ProcessProposalResult::NeedSync(deadline, proposal) => executor.spawn(
                     Self::sync_and_process_proposal(
                         Arc::clone(&event_processor),
@@ -241,7 +244,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
         let mut guard = event_processor.write().compat().await.unwrap();
         guard.sync_and_process_proposal(deadline, proposal).await
     }
-
+    // 处理获胜的协议
     async fn process_winning_proposals(
         mut receiver: channel::Receiver<ProposalInfo<T, P>>,
         event_processor: ConcurrentEventProcessor<T, P>,
@@ -251,7 +254,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             guard.process_winning_proposal(proposal_info).await;
         }
     }
-
+    // 处理投票
     async fn process_votes(
         mut receiver: channel::Receiver<VoteMsg>,
         event_processor: ConcurrentEventProcessor<T, P>,
@@ -262,7 +265,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             guard.process_vote(vote, quorum_size).await;
         }
     }
-
+    // 处理超时信息
     async fn process_timeout_msg(
         mut receiver: channel::Receiver<TimeoutMsg>,
         event_processor: ConcurrentEventProcessor<T, P>,
@@ -332,13 +335,14 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
         network_receivers: NetworkReceivers<T, P>,
         pacemaker_timeout_sender_rx: channel::Receiver<Round>,
     ) {
+        //处理新的一轮事件
         executor.spawn(
             Self::process_new_round_events(new_round_events_receiver, event_processor.clone())
                 .boxed()
                 .unit_error()
                 .compat(),
         );
-
+        // 处理提议
         executor.spawn(
             Self::process_proposals(
                 executor.clone(),
@@ -349,14 +353,14 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             .unit_error()
             .compat(),
         );
-
+        // 处理获胜提议
         executor.spawn(
             Self::process_winning_proposals(winning_proposals_receiver, event_processor.clone())
                 .boxed()
                 .unit_error()
                 .compat(),
         );
-
+        // 处理过期块
         executor.spawn(
             Self::process_block_retrievals(
                 network_receivers.block_retrieval,
@@ -366,7 +370,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             .unit_error()
             .compat(),
         );
-
+        // 处理过期chunk
         executor.spawn(
             Self::process_chunk_retrievals(
                 network_receivers.chunk_retrieval,
@@ -376,7 +380,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             .unit_error()
             .compat(),
         );
-
+        // 处理投票
         executor.spawn(
             Self::process_votes(
                 network_receivers.votes,
@@ -387,14 +391,14 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             .unit_error()
             .compat(),
         );
-
+        // 处理超时信息
         executor.spawn(
             Self::process_timeout_msg(network_receivers.timeout_msgs, event_processor.clone())
                 .boxed()
                 .unit_error()
                 .compat(),
         );
-
+        //  处理起搏器超时
         executor.spawn(
             Self::process_outgoing_pacemaker_timeouts(
                 pacemaker_timeout_sender_rx,
@@ -433,7 +437,7 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
         // We first start the network and retrieve the network receivers (this function needs a
         // mutable reference).
         // Must do it here before giving the clones of network to other components.
-         // 我们首先启动网络并检索网络接收器（此功能需要一个可变参考）。
+        // 我们首先启动网络并检索网络接收器（此功能需要一个可变参考）。
         // 在将网络克隆提供给其他组件之前，必须先执行此操作。
         let network_receivers = self.network.start(&executor);
         let initial_data = self
@@ -483,15 +487,16 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
 
             self.block_store = Some(Arc::clone(&block_store));
 
-            // txn manager is required both by proposal generator (to pull the proposers)
-            // and by event processor (to update their status).
-            let proposal_generator = ProposalGenerator::new(
-                block_store.clone(),
-                Arc::clone(&txn_manager),
-                time_service.clone(),
-                self.config.max_block_size,
-                true,
-            );
+        // txn manager is required both by proposal generator (to pull the proposers)
+        // and by event processor (to update their status).
+        // 提案生成器（提取提议者）和事件处理器（更新其状态）都需要txn管理器。
+        let proposal_generator = ProposalGenerator::new(
+            block_store.clone(),
+            Arc::clone(&txn_manager),
+            time_service.clone(),
+            self.config.max_block_size,
+            true,
+        );
 
             let safety_rules = Arc::new(RwLock::new(SafetyRules::new(
                 block_store.clone(),
@@ -548,7 +553,7 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
     }
 
     /// Stop is synchronous: waits for all the worker threads to terminate.
-     /// Stop是同步的：等待所有工作线程终止。
+    /// Stop是同步的：等待所有工作线程终止。
     fn stop(&mut self) {
         if let Some(rt) = self.runtime.take() {
             block_on(rt.shutdown_now().compat()).unwrap();

@@ -147,23 +147,27 @@ impl ConsensusDB {
 
     /// Write the whole schema batch including all data necessary to mutate the ledger
     /// state of some transaction by leveraging rocksdb atomicity support.
+    /// 编写整个模式批处理，包括通过利用rocksdb原子性支持来改变某些事务的窗口状态所需的所有数据。
     fn commit(&self, batch: SchemaBatch) -> Result<()> {
         self.db.write_schemas(batch)
     }
 
     /// Get latest timeout certificates (we only store the latest highest timeout certificates).
+    /// 获取最新的超时证书（我们只存储最新的最高超时证书）。
     fn get_highest_timeout_certificates(&self) -> Result<Option<Vec<u8>>> {
         self.db
             .get::<SingleEntrySchema>(&SingleEntryKey::HighestTimeoutCertificates)
     }
 
     /// Get latest consensus state (we only store the latest state).
+    /// 获得最新的共识状态（我们只存储最新状态）。
     fn get_state(&self) -> Result<Option<Vec<u8>>> {
         self.db
             .get::<SingleEntrySchema>(&SingleEntryKey::ConsensusState)
     }
 
     /// Get all consensus blocks.
+    /// 获得所有共识块。
     fn get_blocks<T: Payload>(&self) -> Result<HashMap<HashValue, Block<T>>> {
         let mut iter = self.db.iter::<BlockSchema<T>>(ReadOptions::default())?;
         iter.seek_to_first();
@@ -171,6 +175,7 @@ impl ConsensusDB {
     }
 
     /// Get all consensus QCs.
+    /// 获得所有共识QC。
     fn get_quorum_certificates(&self) -> Result<HashMap<HashValue, QuorumCert>> {
         let mut iter = self.db.iter::<QCSchema>(ReadOptions::default())?;
         iter.seek_to_first();

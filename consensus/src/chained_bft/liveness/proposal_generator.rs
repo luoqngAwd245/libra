@@ -35,11 +35,11 @@ pub enum ProposalGenerationError {
     CurrentTimeTooOld,
     /// Local clock waiting would exceed round duration to allow the timestamp to be greater that
     /// its parent
-     /// 本地时钟等待将超过循环持续时间以允许时间戳大于其父级
+    /// 本地时钟等待将超过循环持续时间以允许时间戳大于其父级
     #[fail(display = "ExceedsMaxRoundDuration")]
     ExceedsMaxRoundDuration,
     /// Already proposed at this round (only a single proposal per round is allowed)
-     /// 已经在本轮提出（每轮只允许一个提案）
+    /// 已经在本轮提出（每轮只允许一个提案）
     #[fail(display = "CurrentTimeTooOld")]
     AlreadyProposed(Round),
 }
@@ -64,13 +64,13 @@ pub enum ProposalGenerationError {
 pub struct ProposalGenerator<T> {
     // Block store is queried both for finding the branch to extend and for generating the
     // proposed block.
-     // 查询块存储以查找要扩展的分支和生成建议的块。
+    // 查询块存储以查找要扩展的分支和生成建议的块。
     block_store: Arc<dyn BlockReader<Payload = T> + Send + Sync>,
     // Transaction manager is delivering the transactions.
-     // 交易经理正在交付交易。
+    // 交易管理器在交付交易。
     txn_manager: Arc<dyn TxnManager<Payload = T>>,
     // Time service to generate block timestamps
-     // 时间服务生成块时间戳
+    // 时间服务生成块时间戳
     time_service: Arc<dyn TimeService>,
     // Max number of transactions to be added to a proposed block.
     // 要添加到建议块的最大事务数。
@@ -112,7 +112,7 @@ impl<T: Payload> ProposalGenerator<T> {
     /// by the caller.
     /// 3. In case a given round is not greater than the calculated parent, return an OldRound
     /// error.
-     /// 该函数生成一个新的提议块：当TxnManager实现提供有效负载时，将满足返回的未来。 每轮最多可生成一个提案（不允许提案含糊）。
+    /// 该函数生成一个新的提议块：当TxnManager实现提供有效负载时，将满足返回的未来。 每轮最多可生成一个提案（不允许提案含糊）。
     ///  TxnManager实现返回的错误将传播给调用者。
     /// 选择扩展分支的逻辑如下：
     /// 1.该函数从块树中获取单链的最高头。
@@ -142,12 +142,12 @@ impl<T: Payload> ProposalGenerator<T> {
         // One needs to hold the blocks with the references to the payloads while get_block is
         // being executed: pending blocks vector keeps all the pending ancestors of the extended
         // branch.
-         // 在执行get_block时，需要使用对有效负载的引用来保存块：挂起块vector保留扩展分支的所有待定祖先。
+        // 在执行get_block时，需要使用对有效负载的引用来保存块：挂起块vector保留扩展分支的所有待定祖先。
         let pending_blocks = match self.block_store.path_from_root(Arc::clone(&hqc_block)) {
             Some(res) => res,
             // In case the whole system moved forward between the check of a round and getting
             // path from root.
-             // 如果整个系统在一轮检查和从根获取路径之间向前移动。
+            // 如果整个系统在一轮检查和从根获取路径之间向前移动。
             None => {
                 return Err(ProposalGenerationError::GivenRoundTooLow(hqc_block.round()));
             }
@@ -155,7 +155,7 @@ impl<T: Payload> ProposalGenerator<T> {
         //let pending_blocks = self.get_pending_blocks(Arc::clone(&hqc_block));
         // Exclude all the pending transactions: these are all the ancestors of
         // parent (including) up to the root (excluding).
-         // 排除所有挂起的事务：这些是父（包括）到根（不包括）的所有祖先。
+        // 排除所有挂起的事务：这些是父（包括）到根（不包括）的所有祖先。
         let exclude_payload = pending_blocks
             .iter()
             .map(|block| block.get_payload())

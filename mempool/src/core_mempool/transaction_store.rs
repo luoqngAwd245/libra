@@ -35,6 +35,7 @@ pub struct TransactionStore {
     system_ttl_index: TTLIndex,
     timeline_index: TimelineIndex,
     // keeps track of "non-ready" txns (transactions that can't be included in next block)
+    //跟踪“非就绪”txns（下一个块中不能包含的事务）
     parking_lot_index: ParkingLotIndex,
 
     // configuration
@@ -79,6 +80,8 @@ impl TransactionStore {
 
     /// insert transaction into TransactionStore
     /// performs validation checks and updates indexes
+    ///将事务插入交易存儲
+     ///执行验证检查并更新索引
     pub(crate) fn insert(
         &mut self,
         txn: MempoolTransaction,
@@ -120,6 +123,7 @@ impl TransactionStore {
             }
 
             // insert into storage and other indexes
+            // 插入存储和其他索引
             self.system_ttl_index.insert(&txn);
             self.expiration_time_index.insert(&txn);
             txns.insert(sequence_number, txn);
@@ -130,12 +134,15 @@ impl TransactionStore {
     }
 
     /// Check if mempool can handle new insertion requests
+    /// 检查队列size是否大于阀值
     pub(crate) fn health_check(&self) -> bool {
         self.system_ttl_index.size() < self.capacity || self.parking_lot_index.size() > 0
     }
 
     /// checks if Mempool is full
     /// If it's full, tries to free some space by evicting transactions from ParkingLot
+    ///检查Mempool是否已满
+    ///如果已满，请尝试通过从ParkingLot中删除交易来释放一些空间
     fn check_if_full(&mut self) -> bool {
         if self.system_ttl_index.size() >= self.capacity {
             // try to free some space in Mempool from ParkingLot
@@ -153,6 +160,9 @@ impl TransactionStore {
     /// check if transaction is already present in Mempool
     /// e.g. given request is update
     /// we allow increase in gas price to speed up process
+    ///检查Mempool中是否已存在事务
+     ///例如 给定的请求是更新
+     ///我们允许增加gas价格以加快流程
     fn check_for_update(
         &mut self,
         txn: &MempoolTransaction,
@@ -194,6 +204,11 @@ impl TransactionStore {
     /// supposed to be included in both PriorityIndex (ordering for Consensus) and
     /// TimelineIndex (txns for SharedMempool)
     /// Other txns are considered to be "non-ready" and should be added to ParkingLotIndex
+    ///修复了不变量：
+     ///与当前序列号顺序的给定帐户的所有事务
+     ///应该包含在PriorityIndex（订购共识）和
+     /// TimelineIndex（SharedMempool的txns）
+     ///其他txns被认为是“非就绪”，应该添加到ParkingLotIndex中
     fn process_ready_transactions(
         &mut self,
         address: &AccountAddress,
@@ -223,12 +238,19 @@ impl TransactionStore {
     /// handles transaction commit
     /// it includes deletion of all transactions with sequence number <= `sequence_number`
     /// and potential promotion of sequential txns to PriorityIndex/TimelineIndex
+    ///处理交易提交
+     ///它包括删除序列号为<=`sequence_number`的所有事务
+     ///并且可能将顺序txns提升为PriorityIndex / TimelineIndex
     pub(crate) fn commit_transaction(&mut self, account: &AccountAddress, sequence_number: u64) {
         if let Some(txns) = self.transactions.get_mut(&account) {
             // remove all previous seq number transactions for this account
             // This can happen if transactions are sent to multiple nodes and one of
             // nodes has sent the transaction to consensus but this node still has the
             // transaction sitting in mempool
+            //删除此帐户的所有先前seq编号交易
+            //如果将事务发送到多个节点和其中一个节点，则会发生这种情况
+            //节点已将事务发送到达成一致，但此节点仍然具有
+            //坐在mempool里的交易
             let mut active = txns.split_off(&(sequence_number + 1));
             let txns_for_removal = txns.clone();
             txns.clear();

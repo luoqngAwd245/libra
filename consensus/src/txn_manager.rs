@@ -60,7 +60,7 @@ impl MempoolProxy {
     }
 
     /// Submit the request and return the future, which is fulfilled when the response is received.
-    /// 提交请求并返回未来，这将在收到回复时完成。
+    /// 提交请求并返回future，这将在收到回复时完成。
     fn submit_commit_transactions_request(
         &self,
         req: CommitTransactionsRequest,
@@ -82,7 +82,7 @@ impl TxnManager for MempoolProxy {
     type Payload = Vec<SignedTransaction>;
 
     /// The returned future is fulfilled with the vector of SignedTransactions
-     /// 使用SignedTransactions的向量来实现返回的future
+    /// 使用SignedTransactions的Vector来实现返回future
     fn pull_txns(
         &self,
         max_size: u64,

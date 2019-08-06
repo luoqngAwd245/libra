@@ -248,7 +248,7 @@ pub trait BlockReader: Send + Sync {
     ) -> Block<Self::Payload>;
 
     /// Return the certified block with the highest round.
-     /// 返回最高圆的认证区块
+    /// 返回最高圆的认证区块。
     fn highest_certified_block(&self) -> Arc<Block<Self::Payload>>;
 
     /// Return the quorum certificate with the highest round

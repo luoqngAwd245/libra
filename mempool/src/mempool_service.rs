@@ -29,6 +29,7 @@ pub(crate) struct MempoolService {
 }
 
 impl Mempool for MempoolService {
+    //添加交易到内存池
     fn add_transaction_with_validation(
         &mut self,
         ctx: ::grpcio::RpcContext<'_>,

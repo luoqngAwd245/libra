@@ -28,9 +28,11 @@ pub struct ExecuteBlockRequest {
     pub transactions: Vec<SignedTransaction>,
 
     /// Id of parent block.
+    /// 父块的id
     pub parent_block_id: HashValue,
 
     /// Id of current block.
+    /// 当前块的id
     pub block_id: HashValue,
 }
 
@@ -52,16 +54,20 @@ impl ExecuteBlockRequest {
 #[cfg_attr(any(test, feature = "testing"), derive(Arbitrary))]
 pub struct ExecuteBlockResponse {
     /// Root hash of the transaction accumulator as if all transactions in this block are applied.
+    /// 事务累加器的根哈希，就好像应用了此块中的所有事务一样。
     root_hash: HashValue,
 
     /// Status code for each individual transaction in this block.
+    /// 此块中每个单独事务的状态代码。
     status: Vec<TransactionStatus>,
 
     /// The corresponding ledger version when this block is committed.
+    /// 提交此块时的相应分类帐版本。
     version: Version,
 
     /// If set, these are the set of validators that will be used to start the next epoch
     /// immediately after this state is committed.
+    /// 如果设置，这些是在提交此状态后立即用于启动下一个纪元的验证器集。
     validators: Option<ValidatorSet>,
 }
 

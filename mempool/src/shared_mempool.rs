@@ -38,6 +38,9 @@ use vm_validator::vm_validator::{get_account_state, TransactionValidation};
 /// state of last sync with peer
 /// `timeline_id` is position in log of ready transactions
 /// `is_alive` - is connection healthy
+/// 连同peer的上一次同步状态
+/// `timeline_id`在就绪交易日志中的位置
+/// `is_alive` - 连接的健康
 #[derive(Clone)]
 struct PeerSyncState {
     timeline_id: u64,
@@ -91,7 +94,7 @@ where
         }
     }
 }
-
+// 通知订阅者
 fn notify_subscribers(
     event: SharedMempoolNotification,
     subscribers: &[UnboundedSender<SharedMempoolNotification>],
@@ -136,6 +139,8 @@ fn lost_peer(peer_info: &Mutex<PeerInfo>, peer_id: PeerId) {
 
 /// sync routine
 /// used to periodically broadcast ready to go transactions to peers
+/// 同步例程，用于定期向其他验证节点广播准备好的交易
+///
 async fn sync_with_peers<'a>(
     peer_info: &'a Mutex<PeerInfo>,
     mempool: &'a Mutex<CoreMempool>,
@@ -145,6 +150,8 @@ async fn sync_with_peers<'a>(
     // Clone the underlying peer_info map and use this to sync and collect
     // state updates. We do this instead of holding the lock for the whole
     // function since that would hold the lock across await points which is bad.
+    // 克隆基础peer_info映射并使用它来同步和收集状态更新。 我们这样做而不是整个函数保持锁定，
+    // 因为那样会保持锁通过坏掉的await点。
     let peer_info_copy = peer_info
         .lock()
         .expect("[shared mempool] failed to acquire peer_info lock")
@@ -157,11 +164,13 @@ async fn sync_with_peers<'a>(
         if peer_state.is_alive {
             let timeline_id = peer_state.timeline_id;
 
+            //读取从timeline_id开始的batch_size条交易
+
             let (transactions, new_timeline_id) = mempool
                 .lock()
                 .expect("[shared mempool] failed to acquire mempool lock")
                 .read_timeline(timeline_id, batch_size);
-
+             //交易不为空
             if !transactions.is_empty() {
                 OP_COUNTERS.inc_by("smp.sync_with_peers", transactions.len());
                 let mut msg = MempoolSyncMsg::new();
@@ -179,6 +188,7 @@ async fn sync_with_peers<'a>(
                 );
                 // Since this is a direct-send, this will only error if the network
                 // module has unexpectedly crashed or shutdown.
+                // 由于这是直接发送，因此只有在网络模块意外崩溃或关闭时才会出错。
                 network_sender
                     .send_to(peer_id, msg)
                     .await
@@ -201,6 +211,7 @@ async fn sync_with_peers<'a>(
 }
 
 /// used to validate incoming transactions and add them to local Mempool
+/// 用于验证传入的事务并将它们添加到本地Mempool
 async fn process_incoming_transactions<V>(
     smp: SharedMempool<V>,
     peer_id: PeerId,
@@ -273,6 +284,8 @@ async fn process_incoming_transactions<V>(
 
 /// This task handles [`SyncEvent`], which is periodically emitted for us to
 /// broadcast ready to go transactions to peers.
+/// 此任务处理[`SyncEvent`]，它会定期发送给我们广播准备好的事务到其他验证节点。
+///
 async fn outbound_sync_task<V>(smp: SharedMempool<V>, mut interval: IntervalStream)
 where
     V: TransactionValidation,
@@ -301,6 +314,7 @@ where
 }
 
 /// This task handles inbound network events.
+/// 此任务处理入站网络事件
 async fn inbound_network_task<V>(
     smp: SharedMempool<V>,
     executor: TaskExecutor,
@@ -313,6 +327,9 @@ async fn inbound_network_task<V>(
     let mut workers_available = smp.config.shared_mempool_max_concurrent_inbound_syncs;
     let (sender, mut receiver) = mpsc::channel(workers_available);
 
+    // 直接处理NewPeer / LostPeer事件，因为它们不是异步的，我们不想缓冲它们或让它们重新排序。
+    // 入站直接发送消息放置在有界FuturesUnordered队列中，并允许同时执行。 .buffer_unordered（）
+    // 也能正确处理背压，所以如果mempool很慢，背压会传播到网络。
     while let Some(event) = network_events.next().await {
         trace!("SharedMempoolEvent::NetworkEvent::{:?}", event);
         match event {
@@ -379,6 +396,7 @@ async fn inbound_network_task<V>(
 }
 
 /// GC all expired transactions by SystemTTL
+/// 用SystemTTL回收所有过期的交易
 async fn gc_task(mempool: Arc<Mutex<CoreMempool>>, gc_interval_ms: u64) {
     let mut interval = Interval::new_interval(Duration::from_millis(gc_interval_ms)).compat();
     while let Some(res) = interval.next().await {
@@ -404,6 +422,11 @@ async fn gc_task(mempool: Arc<Mutex<CoreMempool>>, gc_interval_ms: u64) {
 ///   - outbound_sync_task (task that periodically broadcasts transactions to peers)
 ///   - inbound_network_task (task that handles inbound mempool messages and network events)
 ///   - gc_task (task that performs GC of all expired transactions by SystemTTL)
+/// SharedMempool的引导
+///创建以下例程运行的单独的Tokio Runtime：
+///  -  outbound_sync_task（定期向对等方广播事务的任务）
+///  -  inbound_network_task（处理入站mempool消息和网络事件的任务）
+///  -  gc_task（由SystemTTL执行所有过期事务的GC的任务）
 pub(crate) fn start_shared_mempool<V>(
     config: &NodeConfig,
     mempool: Arc<Mutex<CoreMempool>>,
@@ -437,7 +460,7 @@ where
 
     let interval =
         timer.unwrap_or_else(|| default_timer(config.mempool.shared_mempool_tick_interval_ms));
-
+    //同步事务给其他节点
     executor.spawn(
         outbound_sync_task(smp.clone(), interval)
             .boxed()
@@ -445,6 +468,7 @@ where
             .compat(),
     );
 
+    //接收事务来自其他节点
     executor.spawn(
         inbound_network_task(smp, executor.clone(), network_events)
             .boxed()
@@ -452,6 +476,7 @@ where
             .compat(),
     );
 
+    //定时清理过期交易
     executor.spawn(
         gc_task(mempool, config.mempool.system_transaction_gc_interval_ms)
             .boxed()

@@ -74,6 +74,7 @@ impl<T: Payload> BlockRetrievalResponse<T> {
 /// BlockRetrievalRequest carries a block id for the requested block as well as the
 /// oneshot sender to deliver the response.
 /// BlockRetrievalRequest携带所请求块的块ID以及单个发送者以传递响应。
+///
 pub struct BlockRetrievalRequest<T> {
     pub block_id: HashValue,
     pub num_blocks: u64,
@@ -83,6 +84,7 @@ pub struct BlockRetrievalRequest<T> {
 /// Represents a request to get up to batch_size transactions starting from start_version
 /// with the oneshot sender to deliver the response.
 /// 表示从start_version开始到达batch_size事务的请求，其中oneshot发送者提供响应。
+
 pub struct ChunkRetrievalRequest {
     pub start_version: u64,
     pub target: QuorumCert,
@@ -116,7 +118,7 @@ pub struct ConsensusNetworkImpl {
     // Self sender and self receivers provide a shortcut for sending the messages to itself.
     // (self sending is not supported by the networking API).
     // Note that we do not support self rpc requests as it might cause infinite recursive calls.
-     // 自发送方和自身接收方提供了将消息发送给自身的快捷方式。（网络API不支持自发送）。注意我们不支持
+    // 自发送方和自身接收方提供了将消息发送给自身的快捷方式。（网络API不支持自发送）。注意我们不支持
     // 自我rpc请求，因为它可能导致无限递归调用。
     self_sender: channel::Sender<Result<Event<ConsensusMsg>, failure::Error>>,
     self_receiver: Option<channel::Receiver<Result<Event<ConsensusMsg>, failure::Error>>>,

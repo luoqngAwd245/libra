@@ -36,6 +36,7 @@ impl MempoolRuntime {
         let mempool = Arc::new(Mutex::new(CoreMempool::new(&config)));
 
         // setup grpc server
+        // 設置GRPC服務器
         let env = Arc::new(
             EnvBuilder::new()
                 .name_prefix("grpc-mempool-")
@@ -56,6 +57,7 @@ impl MempoolRuntime {
             .expect("[mempool] unable to create grpc server");
 
         // setup shared mempool
+        // 启动共享内存池
         let storage_client: Arc<dyn StorageRead> = Arc::new(StorageReadServiceClient::new(
             Arc::new(EnvBuilder::new().name_prefix("grpc-mem-sto-").build()),
             "localhost",

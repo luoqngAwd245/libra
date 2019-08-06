@@ -111,6 +111,7 @@ impl ChainedBftProvider {
     /// Retrieve the initial "state" for consensus. This function is synchronous and returns after
     /// reading the local persistent store and retrieving the initial state from the executor.
     /// 检索初始“状态”以达成共识。 此函数是同步的，并在读取本地持久存储并从执行程序检索初始状态后返回。
+    ///
     fn initialize_setup(node_config: &mut NodeConfig) -> InitialSetup {
         // Keeping the initial set of validators in a node config is embarrassing and we should
         // all feel bad about it.
@@ -155,9 +156,11 @@ impl ChainedBftProvider {
 
     /// Choose a proposer that is going to be the single leader (relevant for a mock fixed proposer
     /// election only).
-     /// 选择一个将成为单一领导者的提议者（仅与模拟固定提议者选举相关）。
+    /// 选择一个将成为单一领导者的提议者（仅与模拟固定提议者选举相关）。
+
     fn choose_leader(initial_setup: &InitialSetup) -> Author {
         // As it is just a tmp hack function, pick the smallest PeerId to be a proposer.
+        // 因为它只是一个临时 hack函数，所以选择最小的PeerId作为提议者。
         *initial_setup
             .peers
             .iter()
