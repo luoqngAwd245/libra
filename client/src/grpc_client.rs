@@ -62,6 +62,7 @@ impl GRPCClient {
 
     /// Submits a transaction and bumps the sequence number for the sender, pass in `None` for
     /// sender_account if sender's address is not managed by the client.
+    /// 提交交易并更改发件人的序列号，如果发件人的地址不受客户端管理，则为sender_account传递“ None”。
     pub fn submit_transaction(
         &self,
         sender_account_opt: Option<&mut AccountData>,
@@ -112,6 +113,7 @@ impl GRPCClient {
     }
 
     /// Async version of submit_transaction
+    /// 异步版本的交易提交函数
     pub fn submit_transaction_async(
         &self,
         req: &SubmitTransactionRequest,
@@ -189,11 +191,13 @@ impl GRPCClient {
     }
 
     /// Get the latest account sequence number for the account specified.
+    /// 获取指定帐户的最新帐户序列号。
     pub fn get_sequence_number(&self, address: AccountAddress) -> Result<u64> {
         Ok(get_account_resource_or_default(&self.get_account_blob(address)?.0)?.sequence_number())
     }
 
     /// Get the latest account state blob from validator.
+    /// 从验证器获取最新的帐户状态Blob。
     pub(crate) fn get_account_blob(
         &self,
         address: AccountAddress,
@@ -213,6 +217,7 @@ impl GRPCClient {
     }
 
     /// Get transaction from validator by account and sequence number.
+    /// 通过帐户和序列号从验证器获取交易。
     pub fn get_txn_by_acc_seq(
         &self,
         account: AccountAddress,
@@ -269,6 +274,10 @@ impl GRPCClient {
     /// Get event by access path from validator. AccountStateWithProof will be returned if
     /// 1. No event is available. 2. Ascending and available event number < limit.
     /// 3. Descending and start_seq_num > latest account event sequence number.
+    /// 通过验证器的访问路径获取事件。 如果满足以下条件，则返回AccountStateWithProof
+    ///1.没有可用的事件。
+    ///2.升序且可用事件编号<限制。
+    ///3.降序和start_seq_num>最新的帐户事件序列号。
     pub fn get_events_by_access_path(
         &self,
         access_path: AccessPath,

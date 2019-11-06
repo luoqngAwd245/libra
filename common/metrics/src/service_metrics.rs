@@ -83,6 +83,7 @@ impl ServiceMetrics {
     pub fn req(&self, ctx: &RpcContext) -> Option<HistogramTimer> {
         // this should match a server interceptor; but it's going to be
         // a lot of conversions from [byte] to String
+        // 这应该与服务器拦截器匹配; 但是从[byte]到String会有很多转换
         let mut method_name = "unknown_method".to_string();
         if let Some(name) = path_from_ctx(ctx) {
             method_name = name;

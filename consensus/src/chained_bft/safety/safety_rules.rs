@@ -39,7 +39,7 @@ pub struct VoteInfo {
     /// 提议块的回合。
     proposal_round: Round,
     /// Consensus state after the voting (e.g., with the updated vote round)
-     /// 投票后的共识状态（例如，更新的投票轮次）
+    /// 投票后的共识状态（例如，更新的投票轮次）
     consensus_state: ConsensusState,
     /// The block that should be committed in case this vote gathers QC.
     /// If no block is committed in case the vote gathers QC, return None.

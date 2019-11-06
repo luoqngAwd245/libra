@@ -31,6 +31,7 @@ pub fn create_faucet_key_file(output_file: &str) -> KeyPair {
 }
 
 /// Tries to load a keypair from the path given as argument
+/// 尝试从以参数形式给定的路径中加载keypair
 pub fn load_key_from_file<P: AsRef<Path>>(path: P) -> Result<KeyPair> {
     bincode::deserialize(&fs::read(path)?[..]).map_err(|b| b.into())
 }
@@ -38,6 +39,7 @@ pub fn load_key_from_file<P: AsRef<Path>>(path: P) -> Result<KeyPair> {
 /// Returns the generated or loaded keypair, the path to the file where this keypair is saved,
 /// and a reference to the temp directory that was possibly created (a handle so that
 /// it doesn't go out of scope)
+/// 返回生成或加载的keypair, keypair保存的路径，可能的临时目录的引用（一个句柄以至于不超出作用域）
 pub fn load_faucet_key_or_create_default(
     file_path: Option<String>,
 ) -> (KeyPair, String, Option<TempDir>) {

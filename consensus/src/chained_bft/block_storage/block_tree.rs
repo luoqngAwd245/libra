@@ -51,7 +51,7 @@ pub struct BlockTree<T> {
     /// the tree (the initial root node might not have it, because it's been already
     /// committed). The execution results are not persisted: they're recalculated again for the
     /// pending blocks upon restart.
-     /// 保持已执行块的状态计算结果。
+    /// 保持已执行块的状态计算结果。
     /// 在插入树之前计算所有挂起块的状态计算结果（初始根节点可能没有它，因为它已经被提交）。
     /// 执行结果不会持久存在：重新启动时会为挂起的块重新计算它们。
     id_to_compute_result: HashMap<HashValue, Arc<StateComputeResult>>,
@@ -59,7 +59,7 @@ pub struct BlockTree<T> {
     /// 书的根节点
     root: Arc<Block<T>>,
     /// A certified block with highest round
-     /// 经认证的最高圆形块
+    /// 经认证的最高圆形块
     highest_certified_block: Arc<Block<T>>,
     /// The quorum certificate of highest_certified_block
     /// highest_certified_block的仲裁证书
@@ -300,7 +300,7 @@ where
         }
 
         // All the votes collected for all the execution results of a given proposal.
-         // 为给定提案的所有执行结果收集的所有选票。
+        // 为给定提案的所有执行结果收集的所有选票。
         let block_votes = self
             .id_to_votes
             .entry(block_id)
@@ -309,7 +309,7 @@ where
         // Note that the digest covers not just the proposal id, but also the resulting
         // state id as well as the round number. In other words, if two different voters have the
         // same digest then they reached the same state following the same proposals.
-         // 请注意，摘要不仅包括提案ID，还包括结果状态ID和轮数。 换句话说，如果两个不同的选民有相同的摘要，
+        // 请注意，摘要不仅包括提案ID，还包括结果状态ID和轮数。 换句话说，如果两个不同的选民有相同的摘要，
         // 那么他们就会按照相同的提议达到相同的状态。
         let digest = vote_msg.vote_hash();
         let li_with_sig = block_votes.entry(digest).or_insert_with(|| {
@@ -397,9 +397,8 @@ where
     /// Note that we do not necessarily remove the pruned blocks: they're kept in a separate buffer
     /// for some time in order to enable other peers to retrieve the blocks even after they've
     /// been committed.
-     /// 处理prune_tree返回的数据，它们是分开的，因为调用者可能有兴趣做额外的工作，例如 从持久存储中删除。
+    /// 处理prune_tree返回的数据，它们是分开的，因为调用者可能有兴趣做额外的工作，例如 从持久存储中删除。
     /// 请注意，我们不一定会删除已修剪的块：它们会在一个单独的缓冲区中保留一段时间，以便其他对等体能够在提交后检索块。
-  
     pub(super) fn process_pruned_blocks(
         &mut self,
         root_id: HashValue,
@@ -416,7 +415,7 @@ where
         // The newly pruned blocks are pushed back to the deque pruned_block_ids.
         // In case the overall number of the elements is greater than the predefined threshold,
         // the oldest elements (in the front of the deque) are removed from the tree.
-         // 新修剪的块被推回到deque pruned_block_ids。
+        // 新修剪的块被推回到deque pruned_block_ids。
         // 如果元素的总数大于预定义的阈值，则从树中移除最旧的元素（在双端队列的前面）。
         self.pruned_block_ids.append(&mut newly_pruned_blocks);
         if self.pruned_block_ids.len() > self.max_pruned_blocks_in_mem {

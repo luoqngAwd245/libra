@@ -11,7 +11,7 @@ use types::account_address::AccountAddress;
 /// The round of a block is a consensus-internal counter, which starts with 0 and increases
 /// monotonically. It is used for the protocol safety and liveness (please see the detailed
 /// protocol description).
-/// 块的一轮是一个共识内部计数器，从0开始并单调增加。 它用于协议的安全性和活性（请参阅详细的协议说明）。
+/// 块的一轮是一个共识内部计数器，从0开始并单调增加。 它用于协议的安全性和活性(请参阅详细的协议说明).
 pub type Round = u64;
 /// Height refers to the chain depth of a consensus block in a tree with respect to parent links.
 /// The genesis block starts at height 0.  The round of a block is always >= height.  Height is

@@ -9,6 +9,7 @@
 //! AC serves two types of request from clients:
 //! 1. SubmitTransaction, to submit transaction to associated validator.
 //! 2. UpdateToLatestLedger, to query storage, e.g. account state, transaction log, and proofs.
+//! point taking public gRPC requests from clients.
 //!准入控制（AC）是从客户端获取公共gRPC请求的公共API端点。
 //!AC 服务两种类型来自客户端的请求
 //! 1.SubmitTransaction，提交交易到关联验证者

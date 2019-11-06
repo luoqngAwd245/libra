@@ -3,6 +3,7 @@
 
 //! All proofs generated in this module are not valid proofs. They are only for the purpose of
 //! testing conversion between Rust and Protobuf.
+//! 本模块中生成的所有证明都不是有效证明。 它们仅用于此目的测试Rust和Protobuf之间的转换。
 
 use crate::{
     proof::{

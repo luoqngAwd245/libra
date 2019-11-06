@@ -10,6 +10,14 @@
 //! That file can be found here:
 //!
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/walletlibrary.rs
+//!
+//! 以下文档是Libra Wallet的简约版本。 请注意，此钱包不会提高安全性，因为助记符以未加密形式存储。 在
+//! 未来的迭代中，我们将实现更强大的Wallet实现。 我们打算提供一个易于理解的基础，并逐步改进LibraWallet
+//! 的实现，并且它是整个测试网的安全保证。 为了获得更可靠的钱包参考，作者建议在防锈板条箱中审核相同
+//! 名称的文件。 该文件可以在这里找到：
+//!
+//! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/walletlibrary.rs
+//!
 
 use crate::{
     error::*,
@@ -30,6 +38,7 @@ use types::{
 };
 
 /// WalletLibrary contains all the information needed to recreate a particular wallet
+/// WalletLibrary包含重新创建特定钱包所需的所有信息
 pub struct WalletLibrary {
     mnemonic: Mnemonic,
     key_factory: KeyFactory,
@@ -40,6 +49,7 @@ pub struct WalletLibrary {
 impl WalletLibrary {
     /// Constructor that generates a Mnemonic from OS randomness and subsequently instantiates an
     /// empty WalletLibrary from that Mnemonic
+    /// 构造函数，可从OS随机性生成助记符，然后从该助记符实例化一个空的WalletLibrary
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         let mut rng = EntropyRng::new();
@@ -49,6 +59,7 @@ impl WalletLibrary {
     }
 
     /// Constructor that instantiates a new WalletLibrary from Mnemonic
+    /// 从助记符实例化新WalletLibrary的构造方法
     pub fn new_from_mnemonic(mnemonic: Mnemonic) -> Self {
         let seed = Seed::new(&mnemonic, "LIBRA");
         WalletLibrary {
@@ -61,6 +72,8 @@ impl WalletLibrary {
 
     /// Function that returns the string representation of the WalletLibrary Menmonic
     /// NOTE: This is not secure, and in general the mnemonic should be stored in encrypted format
+    /// 返回WalletLibrary Menmonic的字符串表示形式的函数
+    /// 注意：这是不安全的，通常，助记符应以加密格式存储
     pub fn mnemonic(&self) -> String {
         self.mnemonic.to_string()
     }
@@ -68,12 +81,15 @@ impl WalletLibrary {
     /// Function that writes the wallet Mnemonic to file
     /// NOTE: This is not secure, and in general the Mnemonic would need to be decrypted before it
     /// can be written to file; otherwise the encrypted Mnemonic should be written to file
+    /// 将钱包助记符写入文件的功能
+    /// 注意：这是不安全的，通常在将助记符写入文件之前，需要对其进行解密。 否则应将加密的助记符写入文件
     pub fn write_recovery(&self, output_file_path: &Path) -> Result<()> {
         io_utils::write_recovery(&self, &output_file_path)?;
         Ok(())
     }
 
     /// Recover wallet from input_file_path
+    /// 从input_file_path中恢复钱包
     pub fn recover(input_file_path: &Path) -> Result<WalletLibrary> {
         let wallet = io_utils::recover(&input_file_path)?;
         Ok(wallet)
@@ -99,6 +115,7 @@ impl WalletLibrary {
     }
 
     /// Function that allows to get the address of a particular key at a certain ChildNumber
+    /// 允许在特定ChildNumber处获取特定键的地址的函数
     pub fn new_address_at_child_number(
         &mut self,
         child_number: ChildNumber,
@@ -109,6 +126,7 @@ impl WalletLibrary {
 
     /// Function that generates a new key and adds it to the addr_map and subsequently returns the
     /// AccountAddress associated to the PrivateKey, along with it's ChildNumber
+    /// 生成新密钥并将其添加到addr_map并随后返回与PrivateKey关联的AccountAddress及其子编号的函数
     pub fn new_address(&mut self) -> Result<(AccountAddress, ChildNumber)> {
         let child = self.key_factory.private_child(self.key_leaf)?;
         let address = child.get_address()?;
@@ -124,6 +142,7 @@ impl WalletLibrary {
 
     /// Returns a list of all addresses controlled by this wallet that are currently held by the
     /// addr_map
+    /// 返回此钱包控制的当前由addr_map持有的所有地址的列表
     pub fn get_addresses(&self) -> Result<Vec<AccountAddress>> {
         let mut ret = Vec::with_capacity(self.addr_map.len());
         let rev_map = self
@@ -151,6 +170,8 @@ impl WalletLibrary {
     /// Simple public function that allows to sign a Libra RawTransaction with the PrivateKey
     /// associated to a particular AccountAddress. If the PrivateKey associated to an
     /// AccountAddress is not contained in the addr_map, then this function will return an Error
+    /// 简单的公共功能，允许使用与特定AccountAddress关联的PrivateKey签名Libra RawTransaction。 如果与
+    /// AccountAddress关联的私钥未包含在addr_map中，则此函数将返回错误
     pub fn sign_txn(&self, txn: RawTransaction) -> Result<SignedTransaction> {
         if let Some(child) = self.addr_map.get(&txn.sender()) {
             let raw_bytes = txn.into_proto().write_to_bytes()?;

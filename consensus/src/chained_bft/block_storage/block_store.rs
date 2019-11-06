@@ -255,7 +255,7 @@ impl<T: Payload> BlockStore<T> {
         // the 3-chain safety rules specify that the round of the committed block must be
         // certified_block_round() - 2. In case root().round() is greater than that the committed
         // block carried by LI is older than my current commit.
-         // LedgerInfo不携带有关已提交块的轮次的信息。 但是，3链安全规则指定已提交块的循环必须为
+        // LedgerInfo不携带有关已提交块的轮次的信息。 但是，3链安全规则指定已提交块的循环必须为
         // certified_block_round（） -  2.如果root（）。round（）大于LI承载的块比我当前的提交更旧。
         !(self.block_exists(committed_block_id)
             || self.root().round() + 2 >= qc.certified_block_round())
@@ -263,7 +263,7 @@ impl<T: Payload> BlockStore<T> {
 
     /// Checks if quorum certificate can be inserted in block store without RPC
     /// Returns the enum to indicate the detailed status.
-     /// 检查是否可以在没有RPC的块存储中插入仲裁证书
+    /// 检查是否可以在没有RPC的块存储中插入仲裁证书
     /// 返回枚举以指示详细状态。
     pub fn need_fetch_for_quorum_cert(&self, qc: &QuorumCert) -> NeedFetchResult {
         if qc.certified_block_round() < self.root().round() {
@@ -282,11 +282,11 @@ impl<T: Payload> BlockStore<T> {
     }
 
     /// Validates quorum certificates and inserts it into block tree assuming dependencies exist.
-     /// 假设存在依赖关系，验证仲裁证书并将其插入块树中。
+    /// 假设存在依赖关系，验证仲裁证书并将其插入块树中。
     pub async fn insert_single_quorum_cert(&self, qc: QuorumCert) -> Result<(), InsertError> {
         // Ensure executed state is consistent with Quorum Cert, otherwise persist the quorum's
         // state and hopefully we restart and agree with it.
-         // 确保执行状态与Quorum Cert一致，否则保持仲裁状态，并希望我们重新启动并同意它。
+        // 确保执行状态与Quorum Cert一致，否则保持仲裁状态，并希望我们重新启动并同意它。
         let executed_state = self
             .get_state_for_block(qc.certified_block_id())
             .ok_or_else(|| InsertError::MissingParentBlock(qc.certified_block_id()))?;
@@ -368,7 +368,7 @@ impl<T: Payload> BlockStore<T> {
             // it's fine to fail here, as long as the commit succeeds, the next restart will clean
             // up dangling blocks, and we need to prune the tree to keep the root consistent with
             // executor.
-             //在这里失败是好的，只要提交成功，下一次重启就会清理
+	    //在这里失败是好的，只要提交成功，下一次重启就会清理
              //悬挂块，我们需要修剪树以保持根一致
              //执行者
             error!("fail to delete block: {:?}", e);
@@ -382,7 +382,7 @@ impl<T: Payload> BlockStore<T> {
 
     /// If block id information is found, returns the ledger info placeholder, otherwise, return
     /// a placeholder with info of the genesis block.
-     /// 如果找到块ID信息，则返回分类帐信息占位符，否则返回带有生成块信息的占位符。
+    /// 如果找到块ID信息，则返回分类帐信息占位符，否则返回带有生成块信息的占位符。
     pub fn ledger_info_placeholder(&self, id: Option<HashValue>) -> LedgerInfo {
         let block_id = match id {
             None => return Self::zero_ledger_info_placeholder(),
@@ -413,7 +413,7 @@ impl<T: Payload> BlockStore<T> {
     /// Used in case we're using a ledger info just as a placeholder for signing the votes / QCs
     /// and there is no real block committed.
     /// It's all pretty much zeroes.
-     /// 用于我们使用分类帐信息作为占位符来签署投票/ QC并且没有提交真正的块。
+    /// 用于我们使用分类帐信息作为占位符来签署投票/ QC并且没有提交真正的块。
     /// 这几乎都是零。
     fn zero_ledger_info_placeholder() -> LedgerInfo {
         LedgerInfo::new(
@@ -562,14 +562,14 @@ impl<T: Payload> BlockStore<T> {
     }
 
     /// The number of pruned blocks that are still available in memory
-     /// 内存中仍可用的已修剪块数
+    /// 内存中仍可用的已修剪块数
     pub(super) fn pruned_blocks_in_mem(&self) -> usize {
         self.inner.read().unwrap().pruned_blocks_in_mem()
     }
 
     /// Helper to insert vote and qc
     /// Can't be used in production, because production insertion potentially requires state sync
-     /// 帮助者插入投票和qc
+    /// 帮助者插入投票和qc
     /// 不能在生产中使用，因为生产插入可能需要状态同步
     pub async fn insert_vote_and_qc(
         &self,

@@ -60,7 +60,7 @@ impl TimeService for SimulatedTimeService {
                 inner.now = inner.max;
             }
             // Perhaps this could be done better, but I think its good enough for tests...
-            // 也许这可以做得更好，但我认为它足以进行测试......
+	    // 也许这可以做得更好，但我认为它足以进行测试......
             futures::executor::block_on(t.run());
         }
     }
@@ -84,7 +84,7 @@ impl TimeService for SimulatedTimeService {
 
 impl SimulatedTimeService {
     /// Creates new SimulatedTimeService in disabled state (time not running)
-     /// 在禁用状态下创建新的SimulatedTimeService（时间未运行）
+    /// 在禁用状态下创建新的SimulatedTimeService（时间未运行）
     pub fn new() -> SimulatedTimeService {
         SimulatedTimeService {
             inner: Arc::new(Mutex::new(SimulatedTimeServiceInner {
@@ -124,7 +124,7 @@ impl SimulatedTimeService {
 
     /// Update time_limit of this SimulatedTimeService instance and run pending tasks that has
     /// deadline lower then new time_limit
-     /// 更新此SimulatedTimeService实例的time_limit并运行截止时间低于新time_limit的挂起任务
+    /// 更新此SimulatedTimeService实例的time_limit并运行截止时间低于新time_limit的挂起任务
     #[allow(dead_code)]
     pub fn update_auto_advance_limit(&mut self, time: Duration) {
         let mut inner = self.inner.lock().unwrap();

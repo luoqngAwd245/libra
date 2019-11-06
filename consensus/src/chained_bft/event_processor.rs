@@ -128,7 +128,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// Replica:
     ///
     /// Do nothing
-        ///
+    ///
     /// leader：
     ///
     /// 此事件由上一轮的新仲裁证书或上一轮的超时证书触发。 在任何一种情况下，如果这个副本是本轮的新提议者，
@@ -299,7 +299,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// so be careful with the updates. The safest thing to do is to pass the proposal further
     /// to the proposal election.
     /// This function is invoked when all the dependencies for the given proposal are ready.
-     /// 完成提议处理：请注意，多个任务可以并行执行此功能，因此请小心更新。 最安全的做法是将提案进一步提交给提案选举。
+    /// 完成提议处理：请注意，多个任务可以并行执行此功能，因此请小心更新。 最安全的做法是将提案进一步提交给提案选举。
     /// 当给定提议的所有依赖项都准备就绪时，将调用此函数。
     async fn finish_proposal_processing(
         &self,
@@ -663,7 +663,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     #[allow(clippy::collapsible_if)] // Collapsing here would make if look ugly
     pub async fn process_vote(&self, vote: VoteMsg, quorum_size: usize) {
         // Check whether this validator is a valid recipient of the vote.
-         // 检查此验证器是否是投票的有效收件人。
+        // 检查此验证器是否是投票的有效收件人。
         let next_round = vote.round() + 1;
         if self
             .proposer_election
@@ -685,7 +685,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
         let deadline = self.pacemaker.current_round_deadline();
         // TODO [Reconfiguration] Verify epoch of the vote message.
         // Add the vote and check whether it completes a new QC.
-         // TODO [重新配置]验证投票消息的时期。
+        // TODO [重新配置]验证投票消息的时期。
         //  添加投票并检查是否完成了新的质量控制。
         match self
             .block_store
@@ -727,7 +727,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
                     .await;
             }
             // nothing interesting with votes arriving for the QC that has been formed
-             // 没有任何有趣的选票到达已经形成的QC
+            // 没有任何有趣的选票到达已经形成的QC
             _ => {}
         };
     }
@@ -756,7 +756,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
 
         // Update the pacemaker with the highest committed round so that on the next round
         // duration it calculates, the initial round index is reset
-         // 使用最高承诺回合更新起搏器，以便在计算的下一轮持续时间内重置初始回合索引
+        // 使用最高承诺回合更新起搏器，以便在计算的下一轮持续时间内重置初始回合索引
         self.pacemaker
             .update_highest_committed_round(committed_block.round());
 
@@ -814,7 +814,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     ///
     /// The current version of the function is not really async, but keeping it this way for
     /// future possible changes.
-     ///
+    ///
     /// 从初始父ID开始从块存储中检索n个链式块，如果找不到id或其祖先，则返回<n（尽可能多）。
     ///
     /// 该函数的当前版本并不是真正的异步，而是保持这种方式以适应未来可能的变化。
@@ -849,6 +849,7 @@ impl<T: Payload, P: ProposerInfo> EventProcessor<T, P> {
     /// potentially commit.
     /// 从存储中检索块并将其发回。
     /// 我们还将尝试将QuorumCert添加到块存储中，如果它是针对现有块并且可能提交的话。
+
     pub async fn process_chunk_retrieval(&self, request: ChunkRetrievalRequest) {
         if self
             .block_store

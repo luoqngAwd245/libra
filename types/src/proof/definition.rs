@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This module has definition of various proofs.
+//! 该模块定义了各种证明。
 
 #[cfg(test)]
 #[path = "unit_tests/proof_proto_conversion_test.rs"]
@@ -19,19 +20,25 @@ use proto_conv::{FromProto, IntoProto};
 /// A proof that can be used authenticate an element in an accumulator given trusted root hash. For
 /// example, both `LedgerInfoToTransactionInfoProof` and `TransactionInfoToEventProof` can be
 /// constructed on top of this structure.
+/// 可以使用的证明在给定受信任的根哈希值的情况下验证累加器中的元素。 例如，可以在此结构之上构造
+/// `LedgerInfoToTransactionInfoProof`和`TransactionInfoToEventProof`。
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AccumulatorProof {
     /// All siblings in this proof, including the default ones. Siblings near the root are at the
     /// beginning of the vector.
+    /// 此证明中的所有兄弟姐妹，包括默认的兄弟姐妹。 根附近的兄弟姐妹位于向量的开头。
     siblings: Vec<HashValue>,
 }
 
 impl AccumulatorProof {
     /// Constructs a new `AccumulatorProof` using a list of siblings.
+    /// 使用兄弟姐妹列表构造一个新的“AccumulatorProof”。
     pub fn new(siblings: Vec<HashValue>) -> Self {
         // The sibling list could be empty in case the accumulator is empty or has a single
         // element. When it's not empty, the top most sibling will never be default, otherwise the
         // accumulator should have collapsed to a smaller one.
+        // 如果累加器为空或具有单个元素，则兄弟列表可以为空。 当它不为空时，最顶层的兄弟将永远不会默认，
+        // 否则累加器应该折叠成较小的。
         if let Some(first_sibling) = siblings.first() {
             assert_ne!(*first_sibling, *ACCUMULATOR_PLACEHOLDER_HASH);
         }
@@ -40,6 +47,7 @@ impl AccumulatorProof {
     }
 
     /// Returns the list of siblings in this proof.
+    /// 返回此证明中的兄弟列表。
     pub fn siblings(&self) -> &[HashValue] {
         &self.siblings
     }
@@ -62,6 +70,8 @@ impl FromProto for AccumulatorProof {
         // Iterate from the leftmost 1-bit to LSB in the bitmap. If a bit is set, the corresponding
         // sibling is non-default and we take the sibling from proto_siblings.  Otherwise the
         // sibling on this position is default.
+        // 从位图中最左边的1位到LSB迭代。 如果设置了一个位，则相应的兄弟是非默认的，我们从proto_siblings
+        // 中获取兄弟。 否则，此位置的兄弟是默认的。
         let siblings = AccumulatorBitmap::new(bitmap)
             .iter()
             .map(|x| {
@@ -87,6 +97,7 @@ impl IntoProto for AccumulatorProof {
         let mut proto_proof = Self::ProtoType::new();
         // Iterate over all siblings. For each non-default sibling, add to protobuf struct and set
         // the corresponding bit in the bitmap.
+        // 迭代所有兄弟姐妹。 对于每个非默认同级，添加到protobuf结构并在位图中设置相应的位。
         let bitmap: AccumulatorBitmap = self
             .siblings
             .into_iter()
@@ -108,6 +119,8 @@ impl IntoProto for AccumulatorProof {
 
 /// A proof that can be used to authenticate an element in a Sparse Merkle Tree given trusted root
 /// hash. For example, `TransactionInfoToAccountProof` can be constructed on top of this structure.
+/// 可用于在给定受信任根哈希的情况下验证稀疏Merkle树中的元素的证明。 例如，可以在此结构之上构造
+/// `TransactionInfoToAccountProof`。
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SparseMerkleProof {
     /// This proof can be used to authenticate whether a given leaf exists in the tree or not.
@@ -119,19 +132,28 @@ pub struct SparseMerkleProof {
     ///           corresponding account blob.
     ///     - If this is `None`, this is also a non-inclusion proof which indicates the subtree is
     ///       empty.
+    /// 此证明可用于验证树中是否存在给定叶。
+    /// - 如果这是`Some（HashValue，HashValue）`
+    /// - 如果第一个“HashValue”等于请求的密钥，则这是包含证明，第二个“HashValue”等于相应帐户blob的散列。
+    /// - 否则这是非包含证明。 第一个`HashValue`是子树中唯一存在的键，第二个`HashValue`等于相应帐号blob的哈希值。
+    /// - 如果这是“无”，这也是一个非包含证明，表明子树是空的。
     leaf: Option<(HashValue, HashValue)>,
 
     /// All siblings in this proof, including the default ones. Siblings near the root are at the
     /// beginning of the vector.
+    /// 此证明中的所有兄弟姐妹，包括默认的兄弟姐妹。 根附近的兄弟姐妹位于向量的开头。
     siblings: Vec<HashValue>,
 }
 
 impl SparseMerkleProof {
     /// Constructs a new `SparseMerkleProof` using leaf and a list of siblings.
+    /// 使用leaf和兄弟列表构造一个新的`SparseMerkleProof`。
     pub fn new(leaf: Option<(HashValue, HashValue)>, siblings: Vec<HashValue>) -> Self {
         // The sibling list could be empty in case the Sparse Merkle Tree is empty or has a single
         // element. When it's not empty, the bottom most sibling will never be default, otherwise a
         // leaf and a default sibling should have collapsed to a leaf.
+        // 如果稀疏Merkle树为空或具有单个元素，则兄弟列表可以为空。 如果它不是空的，那么最底层的兄弟
+        // 将永远不会是默认的，否则叶子和默认的兄弟应该折叠成叶子。
         if let Some(last_sibling) = siblings.last() {
             assert_ne!(*last_sibling, *SPARSE_MERKLE_PLACEHOLDER_HASH);
         }
@@ -140,11 +162,13 @@ impl SparseMerkleProof {
     }
 
     /// Returns the leaf node in this proof.
+    /// 返回此证明中的叶节点。
     pub fn leaf(&self) -> Option<(HashValue, HashValue)> {
         self.leaf
     }
 
     /// Returns the list of siblings in this proof.
+    /// 返回此证明中的兄弟列表。
     pub fn siblings(&self) -> &[HashValue] {
         &self.siblings
     }
@@ -154,6 +178,7 @@ impl FromProto for SparseMerkleProof {
     type ProtoType = crate::proto::proof::SparseMerkleProof;
 
     /// Validates `proto_proof` and converts it to `Self` if validation passed.
+    /// 如果验证通过，验证`proto_proof`并将其转换为`Self`。
     fn from_proto(mut proto_proof: Self::ProtoType) -> Result<Self> {
         let proto_leaf = proto_proof.take_leaf();
         let leaf = if proto_leaf.is_empty() {
@@ -189,6 +214,8 @@ impl FromProto for SparseMerkleProof {
         // Iterate from the MSB of the first byte to the rightmost 1-bit in the bitmap. If a bit is
         // set, the corresponding sibling is non-default and we take the sibling from
         // proto_siblings. Otherwise the sibling on this position is default.
+        // 从位图的第一个字节的MSB到最右边的1位迭代。 如果设置了一个位，则相应的兄弟是非默认的，我们从
+        // proto_siblings中获取兄弟。 否则，此位置的兄弟是默认的。
         let siblings: Result<Vec<_>> = SparseMerkleBitmap::new(bitmap)
             .iter()
             .map(|x| {
@@ -214,6 +241,7 @@ impl IntoProto for SparseMerkleProof {
         let mut proto_proof = Self::ProtoType::new();
         // If a leaf is present, we write the key and value hash as a single byte array of 64
         // bytes. Otherwise we write an empty byte array.
+        // 如果存在叶子，我们将键和值散列写为64字节的单字节数组。 否则我们写一个空字节数组。
         if let Some((key, value_hash)) = self.leaf {
             proto_proof.mut_leaf().extend_from_slice(key.as_ref());
             proto_proof
@@ -222,6 +250,7 @@ impl IntoProto for SparseMerkleProof {
         }
         // Iterate over all siblings. For each non-default sibling, add to protobuf struct and set
         // the corresponding bit in the bitmap.
+        // 迭代所有兄弟姐妹。 对于每个非默认同级，添加到protobuf结构并在位图中设置相应的位。
         let bitmap: SparseMerkleBitmap = self
             .siblings
             .into_iter()
@@ -245,20 +274,25 @@ impl IntoProto for SparseMerkleProof {
 /// of an `AccumulatorProof` from `LedgerInfo` to `TransactionInfo` the verifier needs to verify
 /// the correctness of the `TransactionInfo` object, and the `TransactionInfo` object that is
 /// supposed to match the `SignedTransaction`.
+/// 用于验证`SignedTransaction`对象的完整证明。 这个结构包含一个``AccumulatorProof`，从`LedgerInfo`到
+/// `TransactionInfo`，验证者需要验证`TransactionInfo`对象的正确性，以及应该与`SignedTransaction`匹配的`TransactionInfo`对象。
 #[derive(Clone, Debug, Eq, PartialEq, FromProto, IntoProto)]
 #[ProtoType(crate::proto::proof::SignedTransactionProof)]
 pub struct SignedTransactionProof {
     /// The accumulator proof from ledger info root to leaf that authenticates the hash of the
     /// `TransactionInfo` object.
+    /// 累加器从分类帐info root到leaf验证`TransactionInfo`对象的散列。
     ledger_info_to_transaction_info_proof: AccumulatorProof,
 
     /// The `TransactionInfo` object at the leaf of the accumulator.
+    /// 累加器叶子上的`TransactionInfo`对象。
     transaction_info: TransactionInfo,
 }
 
 impl SignedTransactionProof {
     /// Constructs a new `SignedTransactionProof` object using given
     /// `ledger_info_to_transaction_info_proof`.
+    /// 使用给定的`ledger_info_to_transaction_info_proof`构造一个新的`SignedTransactionProof`对象。
     pub fn new(
         ledger_info_to_transaction_info_proof: AccumulatorProof,
         transaction_info: TransactionInfo,
@@ -270,11 +304,13 @@ impl SignedTransactionProof {
     }
 
     /// Returns the `ledger_info_to_transaction_info_proof` object in this proof.
+    /// 返回此证明中的`ledger_info_to_transaction_info_proof`对象。
     pub fn ledger_info_to_transaction_info_proof(&self) -> &AccumulatorProof {
         &self.ledger_info_to_transaction_info_proof
     }
 
     /// Returns the `transaction_info` object in this proof.
+    /// 返回此证明中的`transaction_info`对象。
     pub fn transaction_info(&self) -> &TransactionInfo {
         &self.transaction_info
     }
@@ -283,23 +319,30 @@ impl SignedTransactionProof {
 /// The complete proof used to authenticate the state of an account. This structure consists of the
 /// `AccumulatorProof` from `LedgerInfo` to `TransactionInfo`, the `TransactionInfo` object and the
 /// `SparseMerkleProof` from state root to the account.
+/// 用于验证帐户状态的完整证据。 这个结构包括从`LedgerInfo`到`TransactionInfo`的`AccumulatorProof`，
+/// `TransactionInfo`对象和从州根到帐户的`SparseMerkleProof`。
 #[derive(Clone, Debug, Eq, PartialEq, FromProto, IntoProto)]
 #[ProtoType(crate::proto::proof::AccountStateProof)]
 pub struct AccountStateProof {
     /// The accumulator proof from ledger info root to leaf that authenticates the hash of the
     /// `TransactionInfo` object.
+    /// 累加器从分类帐info root到leaf验证`TransactionInfo`对象的散列。
     ledger_info_to_transaction_info_proof: AccumulatorProof,
 
     /// The `TransactionInfo` object at the leaf of the accumulator.
+    /// 累加器叶子上的`TransactionInfo`对象。
     transaction_info: TransactionInfo,
 
     /// The sparse merkle proof from state root to the account state.
+    /// 从状态根到帐户状态的稀疏merkle证明。
     transaction_info_to_account_proof: SparseMerkleProof,
 }
 
 impl AccountStateProof {
     /// Constructs a new `AccountStateProof` using given `ledger_info_to_transaction_info_proof`,
     /// `transaction_info` and `transaction_info_to_account_proof`.
+    /// 使用给定的`ledger_info_to_transaction_info_proof`，`transaction_info`和
+    /// `transaction_info_to_account_proof`构造一个新的`AccountStateProof`。
     pub fn new(
         ledger_info_to_transaction_info_proof: AccumulatorProof,
         transaction_info: TransactionInfo,
@@ -313,16 +356,19 @@ impl AccountStateProof {
     }
 
     /// Returns the `ledger_info_to_transaction_info_proof` object in this proof.
+    /// 返回此证明中的`ledger_info_to_transaction_info_proof`对象。
     pub fn ledger_info_to_transaction_info_proof(&self) -> &AccumulatorProof {
         &self.ledger_info_to_transaction_info_proof
     }
 
     /// Returns the `transaction_info` object in this proof.
+    /// 返回此证明中的`transaction_info`对象。
     pub fn transaction_info(&self) -> &TransactionInfo {
         &self.transaction_info
     }
 
     /// Returns the `transaction_info_to_account_proof` object in this proof.
+    /// 返回此证明中的`transaction_info_to_account_proof`对象。
     pub fn transaction_info_to_account_proof(&self) -> &SparseMerkleProof {
         &self.transaction_info_to_account_proof
     }
@@ -331,23 +377,30 @@ impl AccountStateProof {
 /// The complete proof used to authenticate a contract event. This structure consists of the
 /// `AccumulatorProof` from `LedgerInfo` to `TransactionInfo`, the `TransactionInfo` object and the
 /// `AccumulatorProof` from event accumulator root to the event.
+/// 用于验证合同事件的完整证据。 这个结构包括从`LedgerInfo`到`TransactionInfo`的`AccumulatorProof`，
+/// `TransactionInfo`对象和从事件累加器根到事件的`AccumulatorProof`。
 #[derive(Clone, Debug, Eq, PartialEq, FromProto, IntoProto)]
 #[ProtoType(crate::proto::proof::EventProof)]
 pub struct EventProof {
     /// The accumulator proof from ledger info root to leaf that authenticates the hash of the
     /// `TransactionInfo` object.
+    /// 累加器从分类帐info root到leaf验证`TransactionInfo`对象的散列。
     ledger_info_to_transaction_info_proof: AccumulatorProof,
 
     /// The `TransactionInfo` object at the leaf of the accumulator.
+    /// 累加器叶子上的`TransactionInfo`对象。
     transaction_info: TransactionInfo,
 
     /// The accumulator proof from event root to the actual event.
+    /// 累加器从事件根证明到实际事件。
     transaction_info_to_event_proof: AccumulatorProof,
 }
 
 impl EventProof {
     /// Constructs a new `EventProof` using given `ledger_info_to_transaction_info_proof`,
     /// `transaction_info` and `transaction_info_to_event_proof`.
+    /// 使用给定的`ledger_info_to_transaction_info_proof`构造一个新的`EventProof`，
+    ///  `transaction_info`和`transaction_info_to_event_proof`。
     pub fn new(
         ledger_info_to_transaction_info_proof: AccumulatorProof,
         transaction_info: TransactionInfo,
@@ -381,6 +434,8 @@ mod bitmap {
     /// non-default and 0 means default.  The LSB corresponds to the sibling at the bottom of the
     /// accumulator. The leftmost 1-bit corresponds to the sibling at the top of the accumulator,
     /// since this one is always non-default.
+    /// 位图指示哪个兄弟节点在压缩累加器证明中是默认的。 1表示非默认值，0表示默认值。
+    /// LSB对应于累加器底部的兄弟。 最左边的1位对应于累加器顶部的兄弟，因为这一个总是非默认的。
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct AccumulatorBitmap(u64);
 

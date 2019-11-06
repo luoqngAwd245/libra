@@ -115,7 +115,8 @@ impl ChainedBftProvider {
     fn initialize_setup(node_config: &mut NodeConfig) -> InitialSetup {
         // Keeping the initial set of validators in a node config is embarrassing and we should
         // all feel bad about it.
-         // 在节点配置中保留初始验证器集是令人尴尬的，我们都应该对它感到不好。
+        // 在节点配置中保留初始验证器集是令人尴尬的，我们都应该对它感到不好。
+
         let peer_id_str = node_config.base.peer_id.clone();
         let author =
             AccountAddress::try_from(peer_id_str).expect("Failed to parse peer id of a validator");

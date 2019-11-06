@@ -4,8 +4,8 @@ title: Bytecode Verifier 字节验证程序
 custom_edit_url: https://github.com/libra/libra/edit/master/language/bytecode_verifier/README.md
 ---
 
-# Bytecode Verifier
-字节验证程序：用于检查堆栈使用、类型、资源、引用的安全
+### Bytecode Verifier: Checking Safety of Stack Usage, Types, Resources, and References
+### 字节验证程序：用于检查堆栈使用、类型、资源、引用的安全
 
 ## Overview 概要
 

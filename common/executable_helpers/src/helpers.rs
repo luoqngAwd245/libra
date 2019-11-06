@@ -43,6 +43,7 @@ pub fn load_configs_from_args(args: &ArgMatches<'_>) -> NodeConfig {
     node_config
 }
 
+// 设置指标
 pub fn setup_metrics(peer_id: &str, node_config: &NodeConfig) {
     if !node_config.metrics.dir.as_os_str().is_empty() {
         metrics::dump_all_metrics_to_file_periodically(
@@ -80,6 +81,7 @@ pub fn setup_executable(
 
     // Reset the global logger using config (for chan_size currently).
     // We need to drop the global logger guard first before resetting it.
+    // 使用config重置全局记录器（当前为chan_size）。我们需要在重置之前先删除全局记录器保护。
     _logger = None;
     let logger = set_default_global_logger(
         is_logging_disabled,

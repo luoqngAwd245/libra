@@ -53,7 +53,8 @@ impl Drop for LibraHandle {
         self.consensus.stop();
     }
 }
-// 设置AC
+
+//启动AC
 fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
     let env = Arc::new(
         EnvBuilder::new()
@@ -88,8 +89,8 @@ fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
             .admission_control
             .need_to_check_mempool_before_validation,
     );
-    let service = create_admission_control(handle);
     //创建AC服务
+    let service = create_admission_control(handle);
     let server = ServerBuilder::new(Arc::clone(&env))
         .register_service(service)
         .bind(config.admission_control.address.clone(), port)
@@ -101,7 +102,8 @@ fn setup_ac(config: &NodeConfig) -> (::grpcio::Server, AdmissionControlClient) {
     let client = AdmissionControlClient::new(ChannelBuilder::new(env).connect(&connection_str));
     (server, client)
 }
-// 设置执行主键
+
+//启动执行组件
 fn setup_executor(config: &NodeConfig) -> ::grpcio::Server {
     let client_env = Arc::new(EnvBuilder::new().name_prefix("grpc-exe-sto-").build());
     //存储读客户端
@@ -125,6 +127,7 @@ fn setup_executor(config: &NodeConfig) -> ::grpcio::Server {
         .build()
         .expect("Unable to create grpc server")
 }
+
 //创建调试接口
 fn setup_debug_interface(config: &NodeConfig) -> ::grpcio::Server {
     let env = Arc::new(EnvBuilder::new().name_prefix("grpc-debug-").build());
@@ -140,7 +143,8 @@ fn setup_debug_interface(config: &NodeConfig) -> ::grpcio::Server {
         .build()
         .expect("Unable to create grpc server")
 }
-//设置网络
+
+//创建网络
 pub fn setup_network(
     config: &mut NodeConfig,
 ) -> (
@@ -188,7 +192,7 @@ pub fn setup_network(
     let network_signing_public: Ed25519PublicKey = (&network_signing_private).into();
     // 网络身份keypair
     let network_identity_keypair = config.base.peer_keypairs.get_network_identity_keypair();
-     // （（内存网络发送者，内存网络事件），（一致性网络发送者，一致性网络事件））
+    // （（内存网络发送者，内存网络事件），（一致性网络发送者，一致性网络事件））
     let (
         (mempool_network_sender, mempool_network_events),
         (consensus_network_sender, consensus_network_events),

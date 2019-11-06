@@ -15,6 +15,20 @@
 //!
 //! This module can answer questions like "what is the level of 5"
 //! (`level(5)=1`), "what is the right child of 3" `right_child(3)=5`
+//! 该模块提供了操作完美二叉树的功能。节点
+//！ 在树中，它们将被访问的顺序表示
+//！ 有序遍历。 例如  -
+//！```文本
+//！3
+//！ / \
+//！ / \
+//！ 1 5
+//！ / \ / \
+//！ 0 2 4 6
+//！```
+//！
+//！ 这个模块可以回答诸如“5级是什么”之类的问题
+//！ （`level（5）= 1`），“3的正确孩子是什么”`right_child（3）= 5`
 #[derive(Debug, Eq, PartialEq)]
 pub enum NodeDirection {
     Left,

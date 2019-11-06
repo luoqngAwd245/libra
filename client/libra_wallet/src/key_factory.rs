@@ -14,6 +14,15 @@
 //!
 //! Note further that the Key Derivation Function (KDF) chosen in the derivation of Child
 //! Private Keys adheres to [HKDF RFC 5869](https://tools.ietf.org/html/rfc5869).
+//!
+//! 以下是LibraWallet的层次结构密钥派生库的简约版本。
+//!
+//!请注意，天秤座区块链使用ed25519爱德华兹数字签名算法（EdDSA），因此，如果不使用不确定的Schnorr签名方案，
+//! 则无法使用BIP32公钥。 由于LibraWallet旨在成为极简主义者参考简单钱包的实现，以下内容不偏离ed25519规范。
+//! 在此钱包的将来版本中，我们还将在curve25519上提供Schnorr变体的实现，并演示我们对类似于BIP32的公钥的建议
+//! 推导。
+//!
+//!还要注意，在派生子私钥时选择的密钥推导函数（KDF）遵循[HKDF RFC 5869](https://tools.ietf.org/html/rfc5869).
 
 use byteorder::{ByteOrder, LittleEndian};
 use crypto::{hmac::Hmac as CryptoHmac, pbkdf2::pbkdf2, sha3::Sha3};
@@ -28,12 +37,14 @@ use types::account_address::AccountAddress;
 use crate::{error::Result, mnemonic::Mnemonic};
 
 /// Master is a set of raw bytes that are used for child key derivation
+/// 主控是一组用于子密钥派生的原始字节
 pub struct Master([u8; 32]);
 impl_array_newtype!(Master, u8, 32);
 impl_array_newtype_show!(Master);
 impl_array_newtype_encodable!(Master, u8, 32);
 
 /// A child number for a derived key, used to derive a certain private key from the Master
+/// 派生密钥的子代号，用于从主服务器派生某个私钥
 #[derive(Default, Copy, Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub struct ChildNumber(pub(crate) u64);
 
@@ -68,6 +79,7 @@ impl std::convert::AsMut<u64> for ChildNumber {
 }
 
 /// Derived private key.
+/// 派生私钥
 pub struct ExtendedPrivKey {
     /// Child number of the key used to derive from Parent.
     _child_number: ChildNumber,
@@ -79,6 +91,8 @@ impl ExtendedPrivKey {
     /// Constructor for creating an ExtendedPrivKey from a ed25519 PrivateKey. Note that the
     /// ChildNumber are not used in this iteration of LibraWallet, but in order to
     /// enable more general Hierarchical KeyDerivation schemes, we include it for completeness.
+    /// 用于从ed25519私钥创建ExtendedPrivKey的构造方法。 请注意，在此LibraWallet迭代中未使用ChildNumber，
+    /// 但是为了启用更通用的Hierarchical KeyDerivation方案，为完整起见我们将其包括在内。
     pub fn new(_child_number: ChildNumber, private_key: ed25519_dalek::SecretKey) -> Self {
         Self {
             _child_number,
@@ -87,12 +101,14 @@ impl ExtendedPrivKey {
     }
 
     /// Returns the PublicKey associated to a particular ExtendedPrivKey
+    /// 返回与特定ExtendedPrivKey关联的PublicKey
     pub fn get_public(&self) -> ed25519_dalek::PublicKey {
         (&self.private_key).into()
     }
 
     /// Computes the sha3 hash of the PublicKey and attempts to construct a Libra AccountAddress
     /// from the raw bytes of the pubkey hash
+    /// 计算PublicKey的sha3哈希，并尝试从pubkey哈希的原始字节构造Libra AccountAddress
     pub fn get_address(&self) -> Result<AccountAddress> {
         let public_key = self.get_public();
         let mut keccak = Keccak::new_sha3_256();
@@ -110,6 +126,11 @@ impl ExtendedPrivKey {
     /// In other words: In Libra, the message used for signature and verification is the sha3 hash
     /// of the transaction. This sha3 hash is then hashed again using SHA512 to arrive at the
     /// deterministic nonce for the EdDSA.
+    /// libra特定的签名功能，能够对任意HashValue进行签名
+    ///  注意：在Libra中，我们不对事务的原始字节进行签名，而是对事务的原始字节的sha3哈希的原始字节进行签名。
+    /// 重要的是要注意，sha3哈希的原始字节将作为ed25519签名算法的一部分再次被哈希。
+    /// 换句话说：在Libra中，用于签名和验证的消息是事务的sha3哈希。 然后使用SHA512再次对该sha3哈希
+    /// 进行哈希处理，以得出EdDSA的确定性随机数。
     pub fn sign(&self, msg: HashValue) -> ed25519_dalek::Signature {
         let public_key: ed25519_dalek::PublicKey = (&self.private_key).into();
         let expanded_secret_key: ed25519_dalek::ExpandedSecretKey =
@@ -129,6 +150,7 @@ impl KeyFactory {
     const INFO_PREFIX: &'static [u8] = b"LIBRA WALLET: derived key$";
     /// Instantiate a new KeyFactor from a Seed, where the [u8; 64] raw bytes of the Seed are used
     /// to derive both the Master
+    /// 从种子实例化一个新的KeyFactor，其中[u8; 64] Seed的原始字节用于派生两个Master
     pub fn new(seed: &Seed) -> Result<Self> {
         let hkdf_extract = Hkdf::<Sha3_256>::extract(Some(KeyFactory::MASTER_KEY_SALT), &seed.0)?;
 
@@ -160,6 +182,7 @@ impl KeyFactory {
 }
 
 /// Seed is the output of a one-way function, which accepts a Mnemonic as input
+/// 种子是单向函数的输出，该函数接受助记符作为输入
 pub struct Seed([u8; 32]);
 
 impl Seed {
@@ -173,6 +196,8 @@ impl Seed {
     /// This constructor implements the one-way function that allows to generate a Seed from a
     /// particular Mnemonic and salt. WalletLibrary implements a fixed salt, but a user could
     /// choose a user-defined salt instead of the hardcoded one.
+    /// 该构造函数实现单向功能，该功能允许从特定的助记符和盐生成种子。 WalletLibrary实现了固定的盐，
+    /// 但是用户可以选择用户定义的盐，而不是硬编码的盐。
     pub fn new(mnemonic: &Mnemonic, salt: &str) -> Seed {
         let mut mac = CryptoHmac::new(Sha3::sha3_256(), mnemonic.to_string().as_bytes());
         let mut output = [0u8; 32];

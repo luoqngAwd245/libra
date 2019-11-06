@@ -360,7 +360,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
                 .unit_error()
                 .compat(),
         );
-        // 处理过期块
+        // 处理检索块
         executor.spawn(
             Self::process_block_retrievals(
                 network_receivers.block_retrieval,
@@ -370,7 +370,7 @@ impl<T: Payload, P: ProposerInfo> ChainedBftSMR<T, P> {
             .unit_error()
             .compat(),
         );
-        // 处理过期chunk
+        // 处理检索chunk
         executor.spawn(
             Self::process_chunk_retrievals(
                 network_receivers.chunk_retrieval,

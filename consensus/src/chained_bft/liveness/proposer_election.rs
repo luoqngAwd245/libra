@@ -34,3 +34,44 @@ pub trait ProposerElection<T, P> {
         proposal: ProposalInfo<T, P>,
     ) -> Pin<Box<dyn Future<Output = ()> + Send>>;
 }
+
+impl<T: Payload, P: ProposerInfo> IntoProto for ProposalInfo<T, P> {
+    type ProtoType = ProtoProposal;
+
+    fn into_proto(self) -> Self::ProtoType {
+        let mut proto = Self::ProtoType::new();
+        let (block, proposer, hli) = (self.proposal, self.proposer_info, self.highest_ledger_info);
+        proto.set_proposed_block(block.into_proto());
+        proto.set_proposer(
+            to_vec_named(&proposer)
+                .expect("fail to serialize proposer info")
+                .into(),
+        );
+        if let Some(tc) = self.timeout_certificate {
+            proto.set_timeout_quorum_cert(tc.into_proto());
+        }
+        proto.set_highest_ledger_info(hli.into_proto());
+        proto
+    }
+}
+
+impl<T: Payload, P: ProposerInfo> FromProto for ProposalInfo<T, P> {
+    type ProtoType = ProtoProposal;
+
+    fn from_proto(mut object: Self::ProtoType) -> Result<Self> {
+        let proposal = Block::<T>::from_proto(object.take_proposed_block())?;
+        let proposer_info = from_slice(object.get_proposer())?;
+        let highest_ledger_info = QuorumCert::from_proto(object.take_highest_ledger_info())?;
+        let timeout_certificate = if let Some(tc) = object.timeout_quorum_cert.into_option() {
+            Some(PacemakerTimeoutCertificate::from_proto(tc)?)
+        } else {
+            None
+        };
+        Ok(ProposalInfo {
+            proposal,
+            proposer_info,
+            timeout_certificate,
+            highest_ledger_info,
+        })
+    }
+}

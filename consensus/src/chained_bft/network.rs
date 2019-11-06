@@ -40,7 +40,7 @@ use tokio::runtime::TaskExecutor;
 use types::{transaction::TransactionListWithProof, validator_verifier::ValidatorVerifier};
 
 /// The response sent back from EventProcessor for the BlockRetrievalRequest.
-/// 响应从event_processor发回BlockRetrievalRequest
+/// 响应从EventProcessor发回BlockRetrievalRequest
 #[derive(Debug)]
 pub struct BlockRetrievalResponse<T> {
     pub status: BlockRetrievalStatus,
@@ -93,6 +93,10 @@ pub struct ChunkRetrievalRequest {
 }
 
 /// Just a convenience struct to keep all the network proxy receiving queues in one place.
+/// 1. proposals
+/// 2. votes
+/// 3. block retrieval requests (the request carries a oneshot sender for returning the Block)
+/// 4. pacemaker timeouts
 /// Will be returned by the networking trait upon startup.
 /// 只是一个便利结构，可以将所有网络代理接收队列保存在一个地方。
 /// 1.提案
@@ -100,6 +104,7 @@ pub struct ChunkRetrievalRequest {
 /// 3.块检索请求（该请求带有一个单一的发送者以返回该块）
 /// 4.起搏器超时
 /// 将在启动时由网络特征返回。
+
 pub struct NetworkReceivers<T, P> {
     pub proposals: channel::Receiver<ProposalInfo<T, P>>,
     pub votes: channel::Receiver<VoteMsg>,

@@ -5,12 +5,14 @@
 //! here:
 //!
 //! https://github.com/rust-bitcoin/rust-bitcoin/blob/master/src/internal_macros.rs
+//! 以下宏是从rust-bitcoin略微修改的。 原始文件可以在这里找到：
 
 macro_rules! impl_array_newtype {
     ($thing:ident, $ty:ty, $len:expr) => {
         impl $thing {
             #[inline]
             /// Converts the object to a raw pointer
+            /// 对象转裸指针
             pub fn as_ptr(&self) -> *const $ty {
                 let &$thing(ref dat) = self;
                 dat.as_ptr()
@@ -18,6 +20,7 @@ macro_rules! impl_array_newtype {
 
             #[inline]
             /// Converts the object to a mutable raw pointer
+            /// 对象转可变裸指针
             pub fn as_mut_ptr(&mut self) -> *mut $ty {
                 let &mut $thing(ref mut dat) = self;
                 dat.as_mut_ptr()
@@ -25,6 +28,7 @@ macro_rules! impl_array_newtype {
 
             #[inline]
             /// Returns the length of the object as an array
+            /// 返回对象的长度
             pub fn len(&self) -> usize {
                 $len
             }
@@ -37,6 +41,7 @@ macro_rules! impl_array_newtype {
 
             #[inline]
             /// Returns the underlying bytes.
+            /// 返回底层的字节
             pub fn as_bytes(&self) -> &[$ty; $len] {
                 &self.0
             }
@@ -98,6 +103,9 @@ macro_rules! impl_array_newtype {
                 // (we need this for our numeric types; non-numeric ones shouldn't
                 // be ordered anyway except to put them in BTrees or whatever, and
                 // they don't care how we order as long as we're consistent).
+                // 手动执行比较以获取小端顺序（对于数字类型，我们需要这样做；非数字类型
+                // 则无论如何都不应进行排序，除非将它们放入BTrees或其他任何东西中，而且它们
+                // 并不关心我们如何排序，只要我们 是一致的）。
                 for i in 0..$len {
                     if self[$len - 1 - i] < other[$len - 1 - i] {
                         return ::std::cmp::Ordering::Less;

@@ -6,13 +6,17 @@ use libra_crypto::hkdf::HkdfError;
 use std::{convert, error::Error, fmt, io};
 
 /// We define our own Result type in order to not have to import the libra/common/failure_ext
+/// 为了不importlibra/common/failure_ext，我们定义自己所有的返回类型
 pub type Result<T> = ::std::result::Result<T, WalletError>;
 
 /// Libra Wallet Error is a convenience enum for generating arbitrary WalletErrors. Currently, only
 /// the LibraWalletGeneric error is being used, but there are plans to add more specific errors as
-/// the Libra Wallet matures
+/// LibraWallet matures
+/// 天秤座钱包错误是用于生成任意WalletErrors的便捷枚举。 当前，仅使用LibraWalletGeneric错误，但是随着
+/// LibraWallet的成熟，有计划添加更多特定错误。
 pub enum WalletError {
     /// generic error message
+    /// 通用错误信息
     LibraWalletGeneric(String),
 }
 

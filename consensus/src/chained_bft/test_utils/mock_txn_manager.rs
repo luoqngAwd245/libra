@@ -15,6 +15,7 @@ use std::{
 pub type MockTransaction = usize;
 
 /// Trivial mock: generates MockTransactions on the fly. Each next transaction is the next value.
+/// Trivial mock：动态生成MockTransactions。 每个下一个事务都是下一个值。
 pub struct MockTransactionManager {
     next_val: AtomicUsize,
     committed_txns: Arc<RwLock<Vec<MockTransaction>>>,
@@ -39,6 +40,7 @@ impl MockTransactionManager {
 
     /// Pulls the receiver out of the manager to let the clients receive notifications about the
     /// commits.
+    /// 将接收器拉出管理器，让客户端收到有关提交的通知。
     pub fn take_commit_receiver(&mut self) -> mpsc::Receiver<usize> {
         self.commit_receiver
             .take()
@@ -50,6 +52,7 @@ impl TxnManager for MockTransactionManager {
     type Payload = Vec<MockTransaction>;
 
     /// The returned future is fulfilled with the vector of SignedTransactions
+    /// 使用SignedTransactions的向量来实现返回的未来
     fn pull_txns(
         &self,
         max_size: u64,

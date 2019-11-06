@@ -3,6 +3,8 @@
 
 //! `OpCounters` is a collection of convenience methods to add arbitrary counters to modules.
 //! For now, it supports Int-Counters, Int-Gauges, and Histogram.
+//! `OpCounters`是一个方便方法的集合，用于向模块添加任意计数器。
+//!目前，它支持Int-Counters，Int-Gauges和直方圖。
 
 use prometheus::{
     core::{Collector, Desc},

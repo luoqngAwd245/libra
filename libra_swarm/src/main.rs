@@ -36,7 +36,7 @@ struct Args {
     #[structopt(short = "f", long = "faucet_key_path")]
     pub faucet_key_path: Option<String>,
 }
-
+/// cargo run -p libra_swarm -- -s
 /// 集群启动入口
 fn main() {
     

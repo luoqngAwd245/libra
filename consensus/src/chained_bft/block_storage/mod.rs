@@ -62,7 +62,7 @@ pub enum BlockRetrievalFailure {
 /// 尝试将块插入BlockStore后的状态
 pub enum InsertError {
     /// The parent block does not exist, hence not inserting this block
-     /// 父块不存在，因此不插入此块
+    /// 父块不存在，因此不插入此块
     #[fail(display = "MissingParentBlock")]
     MissingParentBlock(HashValue),
     /// The block hash is invalid
@@ -145,7 +145,7 @@ impl From<VoteMsgVerificationError> for InsertError {
 pub enum VoteReceptionResult {
     /// The vote has been added but QC has not been formed yet. Return the number of votes for
     /// the given (proposal, execution) pair.
-     /// 投票已经加入，但QC尚未形成。 返回给定（提议，执行）对的投票数。
+    /// 投票已经加入，但QC尚未形成。 返回给定（提议，执行）对的投票数。
     VoteAdded(usize),
     /// The very same vote message has been processed in past.
     /// 过去曾处理过同样的投票信息。
@@ -178,15 +178,15 @@ pub trait BlockReader: Send + Sync {
     type Payload;
 
     /// Check if a block with the block_id exist in the BlockTree.
-     /// 检查BlockTree中是否存在具有block_id的块。
+    /// 检查BlockTree中是否存在具有block_id的块。
     fn block_exists(&self, block_id: HashValue) -> bool;
 
     /// Try to get a block with the block_id, return an Arc of it if found.
-     /// 尝试使用block_id获取一个块，如果找到则返回一个Arc。
+    /// 尝试使用block_id获取一个块，如果找到则返回一个Arc。
     fn get_block(&self, block_id: HashValue) -> Option<Arc<Block<Self::Payload>>>;
 
     /// Try to get a state id (HashValue) of the system corresponding to block execution.
-     /// 尝试获取与块执行相对应的系统的状态ID（HashValue）。
+    /// 尝试获取与块执行相对应的系统的状态ID（HashValue）。
     fn get_state_for_block(&self, block_id: HashValue) -> Option<ExecutedState>;
 
     /// Try to get an execution result given the specified block id.
@@ -194,7 +194,7 @@ pub trait BlockReader: Send + Sync {
     fn get_compute_result(&self, block_id: HashValue) -> Option<Arc<StateComputeResult>>;
 
     /// Get the current root block of the BlockTree.
-     /// 获取BlockTree的当前根块。
+    /// 获取BlockTree的当前根块。
     fn root(&self) -> Arc<Block<Self::Payload>>;
 
     fn get_quorum_cert_for_block(&self, block_id: HashValue) -> Option<Arc<QuorumCert>>;
@@ -233,7 +233,7 @@ pub trait BlockReader: Send + Sync {
     /// * If the parent or its quorum certificate are not present in the tree,
     /// * If the given round (which is typically calculated by Pacemaker) is not greater than that
     ///   of a parent.
-        /// 生成并返回具有给定父级和有效负载的块。
+    /// 生成并返回具有给定父级和有效负载的块。
     /// 请注意，它不会将块添加到树中，只是生成它。
     /// 我们在BlockStore中想要这个功能的主要原因是签名新创建的块所需的签名者是由块存储保存的。
     /// 在下列情况下，该功能会出现恐慌：
@@ -256,6 +256,6 @@ pub trait BlockReader: Send + Sync {
     fn highest_quorum_cert(&self) -> Arc<QuorumCert>;
 
     /// Return the quorum certificate that carries ledger info with the highest round
-     /// 返回带有最高回合分类帐信息的法定人数证书
+    /// 返回带有最高回合分类帐信息的法定人数证书
     fn highest_ledger_info(&self) -> Arc<QuorumCert>;
 }

@@ -71,7 +71,7 @@ pub trait Pacemaker: Send + Sync {
     fn current_round_deadline(&self) -> Instant;
 
     /// Synchronous function to return the current round.
-     /// 同步功能返回当前回合。
+    /// 同步功能返回当前回合。
     fn current_round(&self) -> Round;
 
     /// Function to update current round based on received certificates.
@@ -94,6 +94,6 @@ pub trait Pacemaker: Send + Sync {
     ) -> Pin<Box<dyn Future<Output = ()> + Send>>;
 
     /// Update the highest committed round
-     /// 更新最高承诺回合
+    /// 更新最高承诺回合
     fn update_highest_committed_round(&self, highest_committed_round: Round);
 }

@@ -81,7 +81,7 @@ message SubmitTransactionResponse {
 //buffer编译器将会根据所选择的不同语言生成服务接口代码及存根。
 service AdmissionControl {
   // Public API to submit transaction to a validator.
-   //用于提交交易到验证者的公开API
+  //用于提交交易到验证者的公开API
   rpc SubmitTransaction(SubmitTransactionRequest)
       returns (SubmitTransactionResponse) {}
 

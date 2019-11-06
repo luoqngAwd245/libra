@@ -47,10 +47,10 @@ pub enum SyncStatus {
 /// 处理共识请求并驱动与远程对等方同步
 pub struct SyncCoordinator<T> {
     // communication with SyncCoordinator is done via this channel
-     // 通过此通道完成与SyncCoordinator的通信
+    // 通过此通道完成与SyncCoordinator的通信
     receiver: mpsc::UnboundedReceiver<CoordinatorMsg>,
     // connection to transaction fetcher
-     // 连接到事务提取器
+    // 连接到事务提取器
     sender_to_downloader: mpsc::Sender<FetchChunkMsg>,
 
     // last committed version that validator is aware of
@@ -115,7 +115,7 @@ impl<T: ExecutorProxyTrait> SyncCoordinator<T> {
     }
 
     /// Consensus request handler
-     /// 共识请求处理程序
+    /// 共识请求处理程序
     async fn handle_request(&mut self, qc: QuorumCert, subscriber: oneshot::Sender<SyncStatus>) {
         let requested_version = qc.ledger_info().ledger_info().version();
         let committed_version = self.executor_proxy.get_latest_version().await;
@@ -174,7 +174,7 @@ impl<T: ExecutorProxyTrait> SyncCoordinator<T> {
 
     /// processes batch of transactions downloaded by fetcher
     /// executes transactions, updates progress state, notifies subscribers if some sync is finished
-     /// 处理由fetcher下载的一批事务执行事务，更新进度状态，如果某些同步完成则通知订阅者
+    /// 处理由fetcher下载的一批事务执行事务，更新进度状态，如果某些同步完成则通知订阅者
     async fn process_transactions(
         &mut self,
         txn_list_with_proof: TransactionListWithProof,
@@ -249,7 +249,7 @@ impl<T: ExecutorProxyTrait> SyncCoordinator<T> {
 /// 代理执行状态同步
 pub trait ExecutorProxyTrait: Sync + Send {
     /// Return the latest known version
-     /// 返回最新的已知版本
+    /// 返回最新的已知版本
     fn get_latest_version(&self) -> Pin<Box<dyn Future<Output = Result<u64>> + Send>>;
 
     /// Execute and commit a batch of transactions

@@ -39,7 +39,6 @@
 //！
 //！请注意，可以同时发出多个同步请求。
 //！ `SyncCoordinator`处理它并确保每个块只下载一次
-
 pub use self::coordinator::SyncStatus;
 
 mod coordinator;

@@ -37,6 +37,8 @@ pub use crate::proof::definition::{
 /// Verifies that a `SignedTransaction` with hash value of `signed_transaction_hash`
 /// is the version `transaction_version` transaction in the ledger using the provided proof.
 /// If event_root_hash is provided, it's also verified against the proof.
+/// 使用提供的证明验证带有散布值`signed_transaction_hash`的`SignedTransaction`是分类帐中的版本`transaction_version`事务。
+/// 如果提供了event_root_hash，它也会根据证据进行验证。
 pub fn verify_signed_transaction(
     ledger_info: &LedgerInfo,
     signed_transaction_hash: HashValue,
@@ -75,6 +77,8 @@ pub fn verify_signed_transaction(
 /// Verifies that the state of an account at version `state_version` is correct using the provided
 /// proof.  If `account_state_blob` is present, we expect the account to exist, otherwise we
 /// expect the account to not exist.
+/// 使用提供的证明验证版本“state_version”的帐户状态是否正确。 如果存在`account_state_blob`，我们希望
+/// 该帐户存在，否则我们预计该帐户不存在。
 pub fn verify_account_state(
     ledger_info: &LedgerInfo,
     state_version: Version,
@@ -101,6 +105,7 @@ pub fn verify_account_state(
 }
 
 /// Verifies that a given event is correct using provided proof.
+/// 使用提供的证明验证给定事件是否正确。
 pub(crate) fn verify_event(
     ledger_info: &LedgerInfo,
     event_hash: HashValue,
@@ -190,6 +195,7 @@ pub(crate) fn verify_transaction_list(
     };
 
     // Verify event root hashes match what is carried on the transaction infos.
+    // 验证事件根哈希与事务信息中携带的内容匹配。
     if let Some(event_lists) = event_lists {
         itertools::zip_eq(event_lists, transaction_and_infos).map(|(events, (_txn, txn_info))| {
             let event_hashes: Vec<_> = events.iter().map(ContractEvent::hash).collect();
@@ -203,10 +209,12 @@ pub(crate) fn verify_transaction_list(
     }
 
     // Get the hashes of all nodes at the accumulator leaf level.
+    // 获取累加器叶级别的所有节点的哈希值。
     let mut hashes = transaction_and_infos
         .iter()
         .map(|(txn, txn_info)| {
             // Verify all transaction_infos and signed_transactions are consistent.
+            // 验证所有transaction_infos和signed_transactions是否一致。
             ensure!(
                 txn.hash() == txn_info.signed_transaction_hash(),
                 "Some hash of signed transaction does not match the corresponding transaction info in proof"
@@ -218,6 +226,7 @@ pub(crate) fn verify_transaction_list(
     let mut first_index = first_version;
 
     // Verify level by level from the leaf level upwards.
+    // 从叶级向上逐级验证。
     for (first_sibling, last_sibling) in siblings_of_first_txn
         .iter()
         .zip(siblings_of_last_txn.iter())
@@ -231,27 +240,34 @@ pub(crate) fn verify_transaction_list(
             if last_index % 2 == 0 {
                 // if `last_index` is even, it is the left child of its parent so the sibling is not
                 // in `hashes`, we have to append it to `hashes` generate parent nodes' hashes.
+                // 如果`last_index`是偶数，它是它的父的左子，所以兄弟不在`哈希`，我们必须将它附加到`哈希`生成父节点的哈希。
                 hashes.push_back(*last_sibling);
             } else {
                 // Otherwise, the sibling should be the second to last hash.
                 // Note: if we check `first_index` first we cannot use num_nodes to index because
                 // hashes length may change.
+                // 否则，兄弟姐妹应该是倒数第二个哈希值。
+                //  注意：如果我们先检查`first_index`，我们就不能使用num_nodes来索引，因为哈希长度可能会改变。
                 ensure!(hashes[num_nodes - 2] == *last_sibling,
                         "Invalid TransactionListWithProof: Last transaction proof doesn't match provided siblings");
             }
             // We haven't reached the first common ancester of all transactions in the list.
+            // 我们还没有达到列表中所有交易的第一个共同祖先。
             if first_index % 2 == 0 {
                 // if `first_index` is even, it is the left child of its parent so the sibling must
                 // be the next node.
+                // 如果`first_index`是偶数，则它是其父项的左子项，因此兄弟必须是下一个节点。
                 ensure!(hashes[1] == *first_sibling,
                             "Invalid TransactionListWithProof: First transaction proof doesn't match provided siblings");
             } else {
                 // Otherwise, the sibling is not in `hashes`, we have to prepend it to `hashes` to
                 // generate parent nodes' hashes.
+                // 否则，兄弟姐妹不在“哈希”中，我们必须将它添加到“哈希”以生成父节点的哈希值。
                 hashes.push_front(*first_sibling);
             }
         } else {
             // We have reached the first common ancestor of all the transactions in the list.
+            // 我们已经达到了列表中所有事务的第一个共同祖先。
             ensure!(
                 first_sibling == last_sibling,
                 "Invalid TransactionListWithProof: Either proof is invalid."
@@ -272,6 +288,7 @@ pub(crate) fn verify_transaction_list(
         }
         hashes = parent_hashes;
         // The parent node index at its level should be floor(index / 2)
+        // 其级别的父节点索引应为floor（index / 2）
         first_index /= 2;
     }
     assert!(hashes.len() == 1);
@@ -286,6 +303,7 @@ pub(crate) fn verify_transaction_list(
 }
 
 /// Verifies that a given `transaction_info` exists in the ledger using provided proof.
+/// 使用提供的证明验证分类帐中是否存在给定的“transaction_info”。
 fn verify_transaction_info(
     ledger_info: &LedgerInfo,
     transaction_version: Version,
@@ -312,6 +330,8 @@ fn verify_transaction_info(
 
 /// Verifies an element whose hash is `element_hash` and version is `element_version` exists in the
 /// accumulator whose root hash is `expected_root_hash` using the provided proof.
+/// 使用提供的证明验证其哈希值为“element_hash”并且版本为“element_version”的元素存在于其根哈希为
+/// “expected_root_hash”的累加器中。
 fn verify_accumulator_element<H: Clone + CryptoHasher>(
     expected_root_hash: HashValue,
     element_hash: HashValue,
@@ -331,16 +351,20 @@ fn verify_accumulator_element<H: Clone + CryptoHasher>(
         .fold(
             (element_hash, element_index),
             // `index` denotes the index of the ancestor of the element at the current level.
+            // `index`表示当前级别元素的祖先索引。
             |(hash, index), sibling_hash| {
                 (
                     if index % 2 == 0 {
                         // the current node is a left child.
+                        // 当前节点是左子节点。
                         MerkleTreeInternalNode::<H>::new(hash, *sibling_hash).hash()
                     } else {
                         // the current node is a right child.
+                        // 当前节点是一个正确的孩子。
                         MerkleTreeInternalNode::<H>::new(*sibling_hash, hash).hash()
                     },
                     // The index of the parent at its level.
+                    // 父级的索引。
                     index / 2,
                 )
             },
@@ -407,6 +431,8 @@ pub const verify_test_accumulator_element: AccumulatorElementVerifier =
 /// is `element_blob` exists in the Sparse Merkle Tree using the provided proof.
 /// Otherwise verifies the proof is a valid non-inclusion proof that shows this key doesn't exist
 /// in the tree.
+/// 如果存在`element_blob`，则使用提供的证明验证其密钥为`element_key`并且值为`element_blob`的元素存在于稀疏Merkle树中。
+/// 否则验证证明是否是有效的非包含证明，表明树中不存在该密钥。
 pub fn verify_sparse_merkle_element(
     expected_root_hash: HashValue,
     element_key: HashValue,
@@ -425,6 +451,7 @@ pub fn verify_sparse_merkle_element(
         (Some(blob), Some((proof_key, proof_value_hash))) => {
             // This is an inclusion proof, so the key and value hash provided in the proof should
             // match element_key and element_value_hash.
+            // 这是包含证明，因此证明中提供的键和值哈希应与element_key和lement_value_hash匹配。
             ensure!(
                 element_key == proof_key,
                 "Keys do not match. Key in proof: {:x}. Expected key: {:x}.",
@@ -443,6 +470,7 @@ pub fn verify_sparse_merkle_element(
         (None, Some((proof_key, _))) => {
             // The proof intends to show that proof_key is the only key in a subtree and
             // element_key would have ended up in the same subtree if it existed in the tree.
+            // 证明打算显示proof_key是子树中唯一的键，如果element_key存在于树中，则它将在同一子树中结束。
             ensure!(
                 element_key != proof_key,
                 "Expected non-inclusion proof, but key exists in proof."

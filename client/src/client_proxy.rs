@@ -51,6 +51,7 @@ const MAX_GAS_AMOUNT: u64 = 100_000;
 const TX_EXPIRATION: i64 = 100;
 
 /// Enum used for error formatting.
+/// 用于错误格式的枚举
 #[derive(Debug)]
 enum InputType {
     Bool,
@@ -59,15 +60,18 @@ enum InputType {
 }
 
 /// Account data is stored in a map and referenced by an index.
+/// 帐户数据存储在map中，并由索引引用。
 #[derive(Debug)]
 pub struct AddressAndIndex {
     /// Address of the account.
+    /// 账户地址
     pub address: AccountAddress,
     /// The account_ref_id of this account in client.
     pub index: usize,
 }
 
 /// Account is represented either as an entry into accounts vector or as an address.
+/// 帐户既可以表示为帐户vector的条目，也可以表示为地址。
 pub enum AccountEntry {
     /// Index into client.accounts
     Index(usize),
@@ -76,6 +80,7 @@ pub enum AccountEntry {
 }
 
 /// Used to return the sequence and sender account index submitted for a transfer
+/// 用于返回提交的转帐序列和发件人帐户索引
 pub struct IndexAndSequence {
     /// Index/key of the account in TestClient::accounts vector.
     pub account_index: AccountEntry,
@@ -122,6 +127,7 @@ impl ClientProxy {
         );
         // Total 3f + 1 validators, 2f + 1 correct signatures are required.
         // If < 4 validators, all validators have to agree.
+        // 总共3f+1 个验证者， 要求2f+1 正确签名。如果小于4个验证者，所有验证者必须达成一致。
         let validator_pubkeys: HashMap<AccountAddress, Ed25519PublicKey> = validators
             .into_iter()
             .map(|(key, value)| (key, value.into()))
@@ -132,6 +138,7 @@ impl ClientProxy {
         let accounts = vec![];
 
         // If we have a faucet account file, then load it to get the keypair
+        // 如果我们有一个faucet帐户文件，则将其加载以获取密钥对
         let faucet_account = if faucet_account_file.is_empty() {
             None
         } else {

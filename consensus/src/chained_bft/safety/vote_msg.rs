@@ -34,7 +34,7 @@ pub enum VoteMsgVerificationError {
     #[fail(display = "ConsensusDataMismatch")]
     ConsensusDataMismatch,
     /// The signature doesn't pass verification
-     /// 签名未通过验证
+    /// 签名未通过验证
     #[fail(display = "SigVerifyError: {}", _0)]
     SigVerifyError(VerifyError),
 }

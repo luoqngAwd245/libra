@@ -202,7 +202,7 @@ impl PacemakerTimeoutManager {
 
     /// Attempts to update highest_received_timeout_certificate when receiving a new remote
     /// timeout certificate.  Returns true if highest_received_timeout_certificate has changed
-     /// 尝试在接收新的远程超时证书时更新highest_received_timeout_certificate。 如果
+    /// 尝试在接收新的远程超时证书时更新highest_received_timeout_certificate。 如果
     /// highest_received_timeout_certificate已更改，则返回true
     pub fn update_highest_received_timeout_certificate(
         &mut self,
@@ -238,7 +238,7 @@ impl PacemakerTimeoutManager {
 
     /// Return a optional reference to the highest timeout certificate (locally generated or
     /// remotely received)
-     /// 返回对最高超时证书的可选引用（本地生成或远程接收）
+    /// 返回对最高超时证书的可选引用（本地生成或远程接收）
     pub fn highest_timeout_certificate(&self) -> Option<&PacemakerTimeoutCertificate> {
         self.highest_timeout_certificates
             .highest_timeout_certificate()

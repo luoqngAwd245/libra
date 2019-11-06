@@ -44,6 +44,35 @@
 //! this to work, the serialization of the same data structures must be identical when computed
 //! by independent validators potentially running different implementations
 //! of the same spec in different languages.
+//!
+//!该模块定义规范序列化机制的特征和实现。
+//!如果需要，结构可以实现CanonicalSerialize特性来指定如何序列化自身，并可以实现CanonicalDeserialize特性来指定反序列化。这种序列化格式的一个设计目标是为简单起见进行优化。它不旨在作为Protobuf或Thrift的另一种成熟的网络序列化。它被设计为仅做一件正确的事，即确定性地从数据结构中生成一致的字节。
+//!
+//!有关如何使用此框架的一个很好的示例，请参见./canonical_serialization_test.rs
+//!
+//!还提供了CanonicalSerializer的极其简单的实现，其编码规则为：
+//!(除非另有说明，否则所有无符号整数都以little-endian表示形式编码)
+//!
+//!1.无符号64位整数的编码定义为8字节的小字节序表示
+//!
+//!2.项（字节数组）的编码定义为：
+//![长度（以字节为单位，以4字节整数表示）] || [以字节为单位的项目]
+//!
+//!
+//!3.项目列表的编码定义为：(尚未实现，因为尚无已知结构需要，但稍后可以轻松添加)
+//![没有。列表中的项数，表示为4字节整数] ||编码（item_0）|| ....
+//!
+//!4.有序图的编码，其中键按字典顺序排序。
+//!当前，我们仅支持Vec <u8>类型的键和值。编码定义为：
+//![没有。映射中的键值对的数量，表示为4字节整数encode（key1）||编码（值1）|| encode（key2）||编码（值2）...
+//!这些对按照密钥的字典顺序附加
+//!
+//!什么是规范序列化？
+//!
+//!规范化序列化可在序列化内存数据结构时保证字节一致性。这对于两方要有效比较他们独立维护的数据结构的情况
+//! 很有用。它发生在共识中，即独立验证者需要就他们独立计算的状态达成一致。最终比较的是序列化数据结构的
+//! 加密哈希。为了使它起作用，当由可能在不同语言中运行相同规范的不同实现的独立验证器计算时，相同数据结构
+//! 的序列化必须相同
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use failure::prelude::*;
@@ -61,6 +90,8 @@ mod canonical_serialization_test;
 // use the signed 32-bit integer's max value as the maximum array length instead of
 // unsigned 32-bit integer. This gives us the opportunity to use the additional sign bit
 // to signal a length extension to support arrays longer than 2^31 in the future
+// 使用有符号的32位整数的最大值作为最大数组长度，而不是无符号的32位整数。 这使我们有机会使用附加符号
+// 位来表示长度扩展，以支持将来大于2 ^ 31的数组
 const ARRAY_MAX_LENGTH: usize = i32::max_value() as usize;
 
 pub trait CanonicalSerialize {
@@ -90,10 +121,13 @@ pub trait CanonicalSerializer {
     // deserialization time. The raw bytes of the array without length prefix are encoded.
     // For deserialization, use decode_bytes_with_len() which requires giving the length
     // as input
+    // 当数组的长度是固定的并且在反序列化时始终是已知的时，请使用此编码器。 没有长度前缀的数组的原始
+    // 字节被编码。 对于反序列化，请使用decode_bytes_with_len（），这需要提供长度作为输入
     fn encode_raw_bytes(&mut self, bytes: &[u8]) -> Result<&mut Self>;
 
     // Use this encoder to encode variable length byte arrays whose length may not be known at
     // deserialization time.
+    // 使用此编码器编码可变长度字节数组，其长度在反序列化时可能未知。
     fn encode_variable_length_bytes(&mut self, v: &[u8]) -> Result<&mut Self>;
 
     fn encode_btreemap<K: CanonicalSerialize, V: CanonicalSerialize>(
@@ -108,6 +142,7 @@ type Endianness = LittleEndian;
 
 /// An implementation of a simple canonical serialization format that implements the
 /// CanonicalSerializer trait using a byte vector.
+/// 一种简单的规范化序列化格式的实现，该格式使用字节向量实现CanonicalSerializer特性。
 #[derive(Clone)]
 pub struct SimpleSerializer<W> {
     output: W,

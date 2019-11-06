@@ -23,6 +23,28 @@
 //! Note1: The in-order-traversal counts from 0
 //! Note2: The level of tree counts from leaf level, start from 0
 //! Note3: The leaf index starting from left-most leaf, starts from 0
+//！ 该模块提供了一个用于在二叉树中定位节点的抽象，
+//！ “位置”唯一地标识节点的位置
+//！
+//！ 在该实现中，“位置”由有序遍历序列号表示
+//！ 节点。
+//！ 定位节点和在节点之间跳转的过程是通过位置计算完成的，
+//！ 它来自树木。
+//！
+//！ 例如
+//！```文本
+//！3
+//！ / \
+//！ / \
+//！ 1 5 < -  [节点索引，a.k.a，位置]
+//！ / \ / \
+//！ 0 2 4 6
+//！
+//！ 0 1 2 3 <[叶指数]
+//！```
+//！ 注1：有序遍历从0开始计数
+//！ 注2：从叶级别开始的树计数级别，从0开始
+//！ 注3：从最左边的叶子开始的叶子索引从0开始
 
 use super::treebits;
 

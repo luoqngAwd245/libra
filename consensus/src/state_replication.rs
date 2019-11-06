@@ -39,7 +39,7 @@ pub struct StateComputeResult {
     /// TxnManager之间传递它。
     pub compute_status: Vec<bool>,
     /// Counts the number of `true` values in the `compute_status` field.
-     /// 计算`compute_status`字段中的'true`值的数量。
+    /// 计算`compute_status`字段中的'true`值的数量。
     pub num_successful_txns: u64,
     /// If set, these are the validator public keys that will be used to start the next epoch
     /// immediately after this state is committed
@@ -66,7 +66,7 @@ pub trait TxnManager: Send + Sync {
 
     /// Notifies TxnManager about the payload of the committed block including the state compute
     /// result, which includes the specifics of what transactions succeeded and failed.
-     /// 通知TxnManager已提交块的有效负载，包括状态计算结果，其中包括事务成功和失败的详细信息。
+    /// 通知TxnManager已提交块的有效负载，包括状态计算结果，其中包括事务成功和失败的详细信息。
     fn commit_txns<'a>(
         &'a self,
         txns: &Self::Payload,
@@ -127,7 +127,7 @@ pub trait StateComputer: Send + Sync {
     ) -> Pin<Box<dyn Future<Output = Result<StateComputeResult>> + Send>>;
 
     /// Send a successful commit. A future is fulfilled when the state is finalized.
-     /// 发送成功提交。 当状态最终确定时，future就会实现。
+    /// 发送成功提交。 当状态最终确定时，future就会实现。
     fn commit(
         &self,
         commit: LedgerInfoWithSignatures,

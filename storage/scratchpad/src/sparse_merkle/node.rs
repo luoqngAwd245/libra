@@ -16,6 +16,19 @@
 //! when we get accounts from storage with proof. It stores the root hash of this subtree.
 //!
 //! - An `EmptyNode` represents an empty subtree with zero leaf.
+//!
+//! 该模块定义了暂存区中维护的稀疏Merkle树中的所有节点。这里有四种节点：
+//!
+//! - 内部节点，拥有两个子节点。 它和标准 merkle树的内部节点一样
+//!
+//! - 叶子节点 ，代表单个账户。类似于存储中的内容，叶节点具有一个键，该键是帐户地址的哈希值，而值哈希
+//! 是相应帐户Blob的哈希值。 不同之处在于，在将叶子作为非包含证明的一部分加载到内存中的情况下，“ LeafNode”
+//! 并不总是具有该值。
+//!
+//! - 子树节点，代表具有一个或多个叶子节点的子树。当我们从存储获取带proof的账户信息的时候，生成子树。
+//! 子树节点保存子树的root hash
+//!
+//! - 空节点，表示没有叶子的空子树
 
 use crypto::{
     hash::{CryptoHash, SPARSE_MERKLE_PLACEHOLDER_HASH},

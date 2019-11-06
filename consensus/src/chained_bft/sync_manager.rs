@@ -145,6 +145,7 @@ where
     /// fails to provide the missing ancestors, the qc is not going to be added.
     /// 从块中单独插入仲裁证书，用于拆分更新共识状态（使用qc）和决定是否投票（使用块）的处理
     /// 将丢失的祖先将从给定的同伴中检索。 如果给定的对等方未能提供缺失的祖先，则不会添加qc。
+
     pub async fn fetch_quorum_cert(
         &self,
         qc: QuorumCert,
@@ -249,7 +250,7 @@ where
         quorum_certs.push(blocks[1].quorum_cert().clone());
         // If a node restarts in the middle of state synchronization, it is going to try to catch up
         // to the stored quorum certs as the new root.
-         // 如果节点在状态同步过程中重新启动，它将尝试捕获存储的仲裁证书作为新根。
+        // 如果节点在状态同步过程中重新启动，它将尝试捕获存储的仲裁证书作为新根。
         self.storage
             .save_tree(blocks.clone(), quorum_certs.clone())?;
         let pre_sync_instance = Instant::now();
@@ -330,6 +331,7 @@ impl BlockRetriever {
     ///
     /// 块检索的第一次尝试将始终发送到preferred_peer以允许领导者驱动仲裁证书创建接下来将随机尝试
     /// 仲裁证书中的其他对等。 如果仲裁证书的所有成员都已用尽，则会返回错误
+
     pub async fn retrieve_block_for_qc<'a, T>(
         &'a mut self,
         qc: &'a QuorumCert,

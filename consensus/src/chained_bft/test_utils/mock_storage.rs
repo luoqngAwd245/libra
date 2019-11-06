@@ -28,6 +28,7 @@ pub struct MockSharedStorage<T> {
 
 /// A storage that simulates the operations in-memory, used in the tests that cares about storage
 /// consistency.
+/// 模拟内存中操作的存储，用于关注存储一致性的测试中。
 pub struct MockStorage<T> {
     pub shared_storage: Arc<MockSharedStorage<T>>,
 }
@@ -58,6 +59,7 @@ impl<T: Payload> MockStorage<T> {
             .collect();
         // There is no root_from_storage in MockStorage(unit tests), hence we use the consensus
         // root value;
+        // MockStorage（单元测试）中没有root_from_storage，因此我们使用共识根值;
         blocks.sort_by_key(Block::round);
         let root_from_storage = blocks[0].id();
         RecoveryData::new(
@@ -153,6 +155,7 @@ impl<T: Payload> PersistentStorage<T> for MockStorage<T> {
         };
 
         // The current assumption is that the genesis block version is 0.
+        // 目前的假设是创世块版本为0。
         storage
             .save_tree(
                 vec![Block::make_genesis_block()],
@@ -167,6 +170,7 @@ impl<T: Payload> PersistentStorage<T> for MockStorage<T> {
 }
 
 /// A storage that ignores any requests, used in the tests that don't care about the storage.
+/// 忽略在不关心存储的测试中使用的任何请求的存储。
 pub struct EmptyStorage;
 
 impl EmptyStorage {

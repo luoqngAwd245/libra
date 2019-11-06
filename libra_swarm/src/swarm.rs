@@ -71,7 +71,7 @@ impl LibraNode {
         let peer_id = config.base.peer_id.clone();
         let log = logdir.join(format!("{}.log", peer_id));
         let log_file = File::create(&log)?;
-        // 节点启动命令参数
+        //节点启动命令参数
         let mut node_command = Command::new(utils::get_bin(LIBRA_NODE_BIN));
         // 构造参数
         node_command
@@ -116,7 +116,7 @@ impl LibraNode {
         } else {
             None
         };
-         // 启动调试客户端
+        // 启动调试客户端
         let debug_client = NodeDebugClient::new(
             "localhost",
             config.debug_interface.admission_control_node_debug_port,
@@ -179,7 +179,7 @@ impl LibraNode {
         }
         false
     }
-    // 节点健康检查    
+    // 节点健康检查
     pub fn health_check(&mut self) -> HealthStatus {
         debug!("Health check on node '{}'", self.peer_id);
 
@@ -215,6 +215,7 @@ impl LibraNode {
         }
     }
 }
+
 ///健康状态枚举
 pub enum HealthStatus {
     Healthy,
@@ -246,7 +247,7 @@ pub struct LibraSwarm {
     //输出日志，LibraNodes的配置文件，libradb等，进入这个目录。
     pub dir: Option<LibraSwarmDir>,
     // Maps the peer id of a node to the LibraNode struct
-    // 将节点的peer id映射到LibraNode结构
+    //将节点的peer id映射到LibraNode结构
     pub nodes: HashMap<String, LibraNode>,
     pub config: SwarmConfig,
     tee_logs: bool,
@@ -327,7 +328,7 @@ impl LibraSwarm {
             .with_output_dir(&dir)
             .with_faucet_keypair(faucet_account_keypair)
             .randomize_ports();
-        // 构造配置
+       // 构造配置
         let config = config_builder.build().unwrap();
 
         let mut swarm = Self {
@@ -336,7 +337,7 @@ impl LibraSwarm {
             config,
             tee_logs,
         };
-        // For each config launch a node 为每个配置启动一个节点
+        // For each config launch a node  为每个配置启动一个节点
         for (path, node_config) in swarm.config.get_configs() {
             let node = LibraNode::launch(
                 &node_config,
@@ -411,7 +412,7 @@ impl LibraSwarm {
             }
 
             // Check if all the nodes have been successfully launched
-            // 检查是否所有节点都成功启动
+            //检查是否所有节点都成功启动
             if done.iter().all(|status| *status) {
                 return Ok(());
             }

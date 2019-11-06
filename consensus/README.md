@@ -60,6 +60,9 @@ In LibraBFT, to better support the goals of the Libra ecosystem, we extend and a
 
 ## Implementation Details 实现细节
 
+The consensus component is mostly implemented in the [Actor](https://en.wikipedia.org/wiki/Actor_model) programming model &mdash; i.e., it uses message-passing to communicate between different subcomponents with the [tokio](https://tokio.rs/) framework used as the task runtime. The primary exception to the actor model (as it is accessed in parallel by several subcomponents) is the consensus data structure *BlockStore* which manages the blocks, execution, quorum certificates, and other shared data structures. The major subcomponents in the consensus component are:
+
+
 共识组件主要在 Actor 程序模块中实现 — 即，它使用消息传递在不同的子组件之间进行通信，其中 tokio 框架用作任务运行时。actor模型的主要例外是(因为它是由几个子组件并行访问的)是共识数据结构 BlockStore ，它管理块、执行、仲裁证书和其他共享数据结构。共识组件中的主要子组件是：
 * **TxnManager** is the interface to the mempool component and supports the pulling of transactions as well as removing committed transactions. A proposer uses on-demand pull transactions from mempool to form a proposal block.
 * TxnManager 是内存池组件的接口，支持拉取交易以及删除已提交的交易。 提议者使用来自内存池中的按需拉取交易来形成提议块。

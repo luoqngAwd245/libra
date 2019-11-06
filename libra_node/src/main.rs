@@ -39,7 +39,7 @@ fn main() {
     let (_ac_handle, _node_handle) = libra_node::main_node::setup_environment(&mut config);
 
     let term = Arc::new(AtomicBool::new(false));
-     //注册新号钩子
+    //注册信号钩子
     register_signals(Arc::clone(&term));
     
     while !term.load(Ordering::Acquire) {

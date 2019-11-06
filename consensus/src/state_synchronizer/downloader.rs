@@ -91,7 +91,7 @@ impl Downloader {
         req.set_batch_size(self.batch_size);
         // Longer-term, we will read from a cloud provider.  But for testnet, just read
         // from the node which is proposing this block
-         // 从长远来看，我们将从云提供商处读取。 但对于testnet，只需从提出此块的节点中读取即可
+        // 从长远来看，我们将从云提供商处读取。 但对于testnet，只需从提出此块的节点中读取即可
         let mut resp = self
             .network
             .request_chunk(peer_id, req, Duration::from_millis(1000))

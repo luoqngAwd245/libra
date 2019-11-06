@@ -96,6 +96,7 @@ impl TransactionValidation for VMValidator {
                     } => {
                         let transaction_info = account_state_with_proof.proof.transaction_info();
                         let state_root = transaction_info.state_root_hash();
+                        // Ï¡ÊèÄ¬¿Ë¶ûÊ÷
                         let smt = SparseMerkleTree::new(state_root);
                         let state_view = VerifiedStateView::new(
                             Arc::clone(&self.storage_read_client),

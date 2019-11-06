@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Convenience structs and functions for generating configuration for a swarm of libra nodes
+//! 方便的结构和函数,可为集群的libra节点生成配置
 use crate::util::gen_genesis_transaction;
 use config::{
     config::{BaseConfig, KeyPairs, NodeConfig, NodeConfigHelpers, VMPublishingOption},
@@ -253,7 +254,7 @@ impl SwarmConfigBuilder {
             .expect("Faucet account key is required to generate config")
         });
 
-        // generate all things needed for generation
+        // generate all things needed for generation 生成生成所需的所有东西
         if !self.output_dir.is_dir() {
             if !self.output_dir.exists() {
                 // generate if doesn't exist

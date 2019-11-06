@@ -69,6 +69,8 @@ impl TreeInserter {
     /// This function is generating a placeholder QC for a block's parent that is signed by a single
     /// signer kept by the block store. If more sophisticated QC required, please use
     /// `insert_block_with_qc`.
+    /// 此函数为块的父级生成占位符QC，该父级由块存储保留的单个签名者签名。 如果需要更复杂的QC，
+    /// 请使用`insert_block_with_qc`。
     pub fn insert_block(
         &mut self,
         parent: &Block<Vec<usize>>,
@@ -145,6 +147,7 @@ pub fn placeholder_certificate_for_block(
     certified_block_round: u64,
 ) -> QuorumCert {
     // Assuming executed state to be Genesis state.
+    // 假设执行状态为Genesis状态。
     let certified_block_state = ExecutedState::state_for_genesis();
     let consensus_data_hash = VoteMsg::vote_digest(
         certified_block_id,
@@ -154,6 +157,7 @@ pub fn placeholder_certificate_for_block(
 
     // This ledger info doesn't carry any meaningful information: it is all zeros except for
     // the consensus data hash that carries the actual vote.
+    // 此分类帐信息不包含任何有意义的信息：除了带有实际投票的共识数据哈希之外，它全部为零。
     let mut ledger_info_placeholder = placeholder_ledger_info();
     ledger_info_placeholder.set_consensus_data_hash(consensus_data_hash);
 

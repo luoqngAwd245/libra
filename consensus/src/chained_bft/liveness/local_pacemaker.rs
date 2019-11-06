@@ -39,13 +39,12 @@ pub trait PacemakerTimeInterval: Send + Sync + 'static {
     /// 3-chain rule for commits, so round 1 has round index 0.  For example, if one wants
     /// to calculate the round duration of round 6 and the highest committed round is 3 (meaning
     /// the highest round to commit a block is round 5, then the round index is 0.
-     ///
+    ///
     /// 使用最高法定人数证书后的回合索引提交块并返回此回合的持续时间
     ///
     /// 圆形指数从0开始（圆形指数= 0是导致最高承诺回合的回合后的第一轮）。 鉴于round r是提交块的最高轮，
     /// 则round round 0是round r + 1。 请注意，对于genesis，不遵循提交的3链规则，因此第1轮具有圆形索引0.
     /// 例如，如果想要计算第6轮的循环持续时间并且最高承诺轮数为3（意味着最高轮到 提交一个块是第5轮，然后圆形索引是0。
-
     fn get_round_duration(&self, round_index_after_committed_qc: usize) -> Duration;
 }
 
@@ -58,10 +57,10 @@ pub trait PacemakerTimeInterval: Send + Sync + 'static {
 #[derive(Clone)]
 pub struct ExponentialTimeInterval {
     // Initial time interval duration after a successful quorum commit.
-     // 成功提交仲裁后的初始时间间隔持续时间。
+    // 成功提交仲裁后的初始时间间隔持续时间。
     base_ms: u64,
     // By how much we increase interval every time
-     // 我们每次增加间隔的程度
+    // 我们每次增加间隔的程度
     exponent_base: f64,
     // Maximum time interval won't exceed base * mul^max_pow.
     // Theoretically, setting it means
@@ -142,7 +141,7 @@ struct LocalPacemakerInner {
     // 确定舍入间隔的时间间隔
     time_interval: Box<dyn PacemakerTimeInterval>,
     // Highest round that a block was committed
-     // 块的最高回合
+    // 块的最高回合
     highest_committed_round: Round,
     // Highest round known certified by QC.
     // 已通过质量控制认证的最高回合。
@@ -161,7 +160,7 @@ struct LocalPacemakerInner {
     // 当前轮次结束时的近似截止日期
     current_round_deadline: Instant,
     // Service for timer
-     // 为计时器服务
+    // 为计时器服务
     time_service: Arc<dyn TimeService>,
     // To send new round events.
     // 发送新一轮事件。
@@ -208,7 +207,7 @@ impl LocalPacemakerInner {
         } + 1;
         // Our counters are initialized via lazy_static, so they're not going to appear in
         // Prometheus if some conditions never happen. Invoking get() function enforces creation.
-         // 我们的计数器是通过lazy_static初始化的，所以如果某些条件永远不会发生，它们就不会出现在
+        // 我们的计数器是通过lazy_static初始化的，所以如果某些条件永远不会发生，它们就不会出现在
         // Prometheus中。 调用get（）函数可以强制创建。
         counters::QC_ROUNDS_COUNT.get();
         counters::TIMEOUT_ROUNDS_COUNT.get();
@@ -235,7 +234,7 @@ impl LocalPacemakerInner {
     /// Trigger an event to create a new round interval and ignore any events from previous round
     /// intervals.  The reason for the event is given by the caller, the timeout is
     /// deterministically determined by the reason and the internal state.
-     /// 触发事件以创建新的轮次间隔，并忽略先前轮次间隔中的任何事件。 事件的原因由调用者给出，
+    /// 触发事件以创建新的轮次间隔，并忽略先前轮次间隔中的任何事件。 事件的原因由调用者给出，
     /// 超时由确定的原因和内部状态决定。
     fn create_new_round_task(&mut self, reason: NewRoundReason) -> impl Future<Output = ()> + Send {
         let round = self.current_round;
@@ -278,7 +277,7 @@ impl LocalPacemakerInner {
         let timeout = self.setup_deadline();
         // Note that the timeout should not be driven sequentially with any other events as it can
         // become the head of the line blocker.
-         // 请注意，不应该使用任何其他事件顺序驱动超时，因为它可能成为行阻止程序的头部。
+        // 请注意，不应该使用任何其他事件顺序驱动超时，因为它可能成为行阻止程序的头部。
         trace!(
             "Scheduling timeout of {} ms for round {}",
             timeout.as_millis(),
@@ -296,7 +295,7 @@ impl LocalPacemakerInner {
             if self.highest_committed_round == 0 {
                 // Genesis doesn't require the 3-chain rule for commit, hence start the index at
                 // the round after genesis.
-                 // Genesis不需要3链规则进行提交，因此在创建后的回合中启动索引。
+                // Genesis不需要3链规则进行提交，因此在创建后的回合中启动索引。
                 self.current_round - 1
             } else {
                 if self.current_round - self.highest_committed_round < 3 {
@@ -317,7 +316,7 @@ impl LocalPacemakerInner {
 
     /// Attempts to update highest_qc_certified_round when receiving QC for given round.
     /// Returns true if highest_qc_certified_round of this pacemaker has changed
-       /// 尝试在接收给定轮次的QC时更新highest_qc_certified_round。
+    /// 尝试在接收给定轮次的QC时更新highest_qc_certified_round。
     /// 如果此起搏器的highest_qc_certified_round已更改，则返回true
     fn update_highest_qc_round(&mut self, round: Round) -> bool {
         if round > self.highest_qc_round {
@@ -337,7 +336,6 @@ impl LocalPacemakerInner {
     /// effective round of this pacemaker.
     /// Generates new_round event if effective round changes and ensures it is
     /// monotonically increasing
- 
     /// 将highest_qc_certified_round，highest_local_tc和highest_received_tc组合成此起搏器的有效轮次。
     /// 如果有效的轮次更改生成new_round事件并确保它单调增加
     fn update_current_round(&mut self) -> Pin<Box<dyn Future<Output = ()> + Send>> {
@@ -425,7 +423,7 @@ impl LocalPacemaker {
         let inner_ref = Arc::clone(&inner);
         let timeout_processing_loop = async move {
             // To jump start the execution return the new round event for the current round.
-             // 要快速启动，执行将返回当前轮次的新轮次事件。
+            // 要快速启动，执行将返回当前轮次的新轮次事件。
             inner_ref
                 .write()
                 .unwrap()

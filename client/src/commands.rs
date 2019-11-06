@@ -35,6 +35,7 @@ fn pretty_format_error(e: Error) -> String {
 }
 
 /// Check whether a command is blocking.
+/// 检查命令是否阻塞
 pub fn blocking_cmd(cmd: &str) -> bool {
     cmd.ends_with('b')
 }
@@ -54,6 +55,7 @@ pub fn is_address(data: &str) -> bool {
 
 /// Returns all the commands available, as well as the reverse index from the aliases to the
 /// commands.
+/// 返回所有可用命令，同时从别名到命令的反向索引
 pub fn get_commands() -> (
     Vec<Arc<dyn Command>>,
     HashMap<&'static str, Arc<dyn Command>>,
@@ -74,6 +76,7 @@ pub fn get_commands() -> (
 }
 
 /// Parse a cmd string, the first element in the returned vector is the command to run
+/// 解析一个cmd字符串，返回vector中的第一个元素是要运行的命令
 pub fn parse_cmd(cmd_str: &str) -> Vec<&str> {
     cmd_str.split_ascii_whitespace().collect()
 }

@@ -4,6 +4,7 @@
 use crate::{client_proxy::ClientProxy, commands::*};
 
 /// Major command for account related operations.
+/// 账户相关操作主要命令
 pub struct AccountCommand {}
 
 impl Command for AccountCommand {
@@ -27,6 +28,7 @@ impl Command for AccountCommand {
 }
 
 /// Sub command to create a random account. The account will not be saved on chain.
+/// 创建子随机账户的子命令，账户不会存在链上
 pub struct AccountCommandCreate {}
 
 impl Command for AccountCommandCreate {
@@ -50,6 +52,7 @@ impl Command for AccountCommandCreate {
 }
 
 /// Sub command to recover wallet from the file specified.
+/// 子命令从指定的文件中恢复钱包。
 pub struct AccountCommandRecoverWallet {}
 
 impl Command for AccountCommandRecoverWallet {
@@ -80,6 +83,7 @@ impl Command for AccountCommandRecoverWallet {
 }
 
 /// Sub command to backup wallet to the file specified.
+/// 子命令将钱包备份到指定的文件。
 pub struct AccountCommandWriteRecovery {}
 
 impl Command for AccountCommandWriteRecovery {
@@ -102,6 +106,7 @@ impl Command for AccountCommandWriteRecovery {
 }
 
 /// Sub command to list all accounts information.
+/// 子命令列出所有帐户信息。
 pub struct AccountCommandListAccounts {}
 
 impl Command for AccountCommandListAccounts {
@@ -117,6 +122,7 @@ impl Command for AccountCommandListAccounts {
 }
 
 /// Sub command to mint account.
+/// 铸币子命令
 pub struct AccountCommandMint {}
 
 impl Command for AccountCommandMint {

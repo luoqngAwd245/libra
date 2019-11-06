@@ -17,7 +17,7 @@ use std::pin::Pin;
 /// 旋转提议器根据循环旋转将圆形映射到作者。
 /// 当固定提议者关闭时，固定的提议者策略会失去活力。 轮换提议者不会收集法定证书以进行f / n轮的机器丢失/拜占庭行为。
 pub struct RotatingProposer<T, P> {
-    // Ordering of proposers to rotate through (all honest replicas must agree on this)   
+    // Ordering of proposers to rotate through (all honest replicas must agree on this)
     proposers: Vec<P>,
     // Number of contiguous rounds (i.e. round numbers increase by 1) a proposer is active
     // in a row

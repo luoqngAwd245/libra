@@ -39,7 +39,7 @@ pub trait TimeService: Send + Sync {
     /// time_service::sleep(Y).await;
     /// Z = time_service::get_current_timestamp();
     /// assert(Z >= X + Y)
-     /// 创造一个将在给定持续时间内睡觉的未来
+    /// 创造一个将在给定持续时间内睡觉的未来
     /// 该函数保证get_current_timestamp将至少增加给定的持续时间，例如
     /// X = time_service::get_current_timestamp();
     /// time_service::sleep(Y).await;
@@ -174,7 +174,7 @@ pub enum WaitingError {
     /// 等待时间超过允许的最大持续时间，立即返回
     MaxWaitExceeded,
     /// Waiting to ensure the current time exceeds min_duration_since_epoch failed
-     /// 等待确保当前时间超过min_duration_since_epoch失败
+    /// 等待确保当前时间超过min_duration_since_epoch失败
     WaitFailed {
         current_duration_since_epoch: Duration,
         wait_duration: Duration,

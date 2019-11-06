@@ -75,7 +75,7 @@ where
 
     /// async method is fulfilled when lock can be acquired
     /// Lock is released when returned guard is dropped
-     /// 可以获取锁定时实现异步方法当退回保护时，锁定被释放
+    /// 可以获取锁定时实现异步方法当退回保护时，锁定被释放
     pub async fn lock(&self, key: T) -> MutexMapGuard<T> {
         let mutex_fut = self.get_or_create_mutex(key.clone());
         let mutex_guard = mutex_fut.compat().await.unwrap();
@@ -89,7 +89,7 @@ where
 
     /// Creates new empty lock_set for given map.
     /// Use this if you want to acquire multiple locks in a loop in single task
-     /// 为给定的map创建新的空lock_set。
+    /// 为给定的map创建新的空lock_set。
     /// 如果要在单个任务中获取循环中的多个锁，请使用此选项
     pub fn new_lock_set(&self) -> LockSet<T> {
         LockSet::new(self)
@@ -101,7 +101,7 @@ where
         let mutex_ref = e.or_insert_with(|| AsyncMutex::new(()));
         // This one is async lock, it will return future that keeps reference on underlining mutex
         // We can't return mutex_ref itself, because
-           // 这一个是异步锁定，它将返回保留对下划线互斥锁的引用的未来
+        // 这一个是异步锁定，它将返回保留对下划线互斥锁的引用的未来
         // 我们不能返回mutex_ref本身，因为
         mutex_ref.lock()
     }
@@ -118,7 +118,6 @@ where
         //由于我们在地图上持有锁定，因此此删除插入不会引入比赛
         //从性能的角度来看，这也是可以的：
         //删除锁定是一个“快乐的路径”：如果没有挂起的锁定，那么我们将能够解包，并且在大多数情况下不需要重新插入互斥锁
-
         let mutex = map.remove(&key);
         // It is possible that mutex is not in map, if multiple guards dropped concurrently
         // 如果多个警卫同时丢弃，则互斥锁可能不在映射中

@@ -122,11 +122,14 @@ impl Arbitrary for AccountStateBlob {
 #[cfg_attr(any(test, feature = "testing"), derive(Arbitrary))]
 pub struct AccountStateWithProof {
     /// The transaction version at which this account state is seen.
+    /// 账户状态可见的交易版本
     pub version: Version,
     /// Blob value representing the account state. If this field is not set, it
     /// means the account does not exist.
+    /// 代表账户状态的Blob 值， 如果字段没有被设置，意味着账户不存在
     pub blob: Option<AccountStateBlob>,
     /// The proof the client can use to authenticate the value.
+    /// 客户端可用于验证值的证明。
     pub proof: AccountStateProof,
 }
 
@@ -147,6 +150,12 @@ impl AccountStateWithProof {
     ///   2. It belongs to account of `address` and is seen at the time the transaction at version
     /// `state_version` is just committed. To make sure this is the latest state, pass in
     /// `ledger_info.version()` as `state_version`.
+    ///用证明来验证帐户状态blob，两者都由`self`携带。
+    ///
+     ///如果没有引发错误，可以确保两件事：
+     /// 1.此帐户状态存在于`ledger_info`表示的分类帐中。
+     /// 2.它属于`address`的帐户，在版本交易时可见
+     ///`state_version`刚刚提交。 为确保这是最新状态，请传入`ledger_info.version（）`作为`state_version`。
     pub fn verify(
         &self,
         ledger_info: &LedgerInfo,
