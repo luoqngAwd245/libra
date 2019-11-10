@@ -133,6 +133,7 @@ impl TxnManager for MempoolProxy {
         txns: &Self::Payload,
         compute_result: &StateComputeResult,
         // Monotonic timestamp_usecs of committed blocks is used to GC expired transactions.
+        // 已提交块的单调timestamp_usecs用于GC过期的事务。
         timestamp_usecs: u64,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send + 'a>> {
         counters::COMMITTED_BLOCKS_COUNT.inc();

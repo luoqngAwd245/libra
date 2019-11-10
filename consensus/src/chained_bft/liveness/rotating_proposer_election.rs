@@ -18,11 +18,14 @@ use std::pin::Pin;
 /// 当固定提议者关闭时，固定的提议者策略会失去活力。 轮换提议者不会收集法定证书以进行f / n轮的机器丢失/拜占庭行为。
 pub struct RotatingProposer<T, P> {
     // Ordering of proposers to rotate through (all honest replicas must agree on this)
+    // 提议者轮换的命令（所有诚实的副本必须对此达成一致）
     proposers: Vec<P>,
     // Number of contiguous rounds (i.e. round numbers increase by 1) a proposer is active
     // in a row
+    // 提议者连续处于活动状态的连续回合数（即，回合数增加1）
     contiguous_rounds: u32,
     // Output stream to send the chosen proposals
+    // 输出流发送选择的建议
     winning_proposals_sender: channel::Sender<ProposalInfo<T, P>>,
 }
 

@@ -16,6 +16,7 @@ use types::validator_verifier::ValidatorVerifier;
 
 /// ProposerInfo is a general trait that can include various proposer characteristics
 /// relevant to a specific protocol implementation. The author is the only common thing for now.
+/// ProposerInfo是一个通用特征，可以包括与特定协议实现有关的各种提议者特征。 作者是目前唯一的常识。
 pub trait ProposerInfo:
     Send + Sync + Clone + Copy + fmt::Debug + DeserializeOwned + Serialize + 'static
 {
@@ -23,6 +24,7 @@ pub trait ProposerInfo:
 }
 
 /// Trivial ProposerInfo implementation.
+/// 简单的ProposerInfo实现。
 impl ProposerInfo for Author {
     fn get_author(&self) -> Author {
         *self
@@ -31,6 +33,7 @@ impl ProposerInfo for Author {
 
 /// ProposalInfo contains the required information for the proposer election protocol to make its
 /// choice (typically depends on round and proposer info).
+/// ProposalInfo包含供提议者选择协议进行选择所需的信息（通常取决于回合和提议者信息）。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProposalInfo<T, P> {
     pub proposal: Block<T>,

@@ -4,6 +4,7 @@
 use crate::{client_proxy::ClientProxy, commands::*};
 
 /// Command to transfer coins between two accounts.
+/// 命令在两个帐户之间转移硬币。
 pub struct TransferCommand {}
 
 impl Command for TransferCommand {

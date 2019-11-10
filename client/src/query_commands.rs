@@ -6,6 +6,7 @@ use types::account_config::get_account_resource_or_default;
 use vm_genesis::get_transaction_name;
 
 /// Major command for query operations.
+/// 查询操作的主要命令。
 pub struct QueryCommand {}
 
 impl Command for QueryCommand {
@@ -30,6 +31,7 @@ impl Command for QueryCommand {
 }
 
 /// Sub commands to query balance for the account specified.
+/// 子命令查询指定帐户的余额。
 pub struct QueryCommandGetBalance {}
 
 impl Command for QueryCommandGetBalance {
@@ -55,6 +57,7 @@ impl Command for QueryCommandGetBalance {
 }
 
 /// Sub command to get the latest sequence number from validator for the account specified.
+/// 子命令从验证器获取指定帐户的最新序列号。
 pub struct QueryCommandGetSeqNum {}
 
 impl Command for QueryCommandGetSeqNum {
@@ -78,6 +81,7 @@ impl Command for QueryCommandGetSeqNum {
 }
 
 /// Command to query latest account state from validator.
+/// 从验证器查询最新帐户状态的命令。
 pub struct QueryCommandGetLatestAccountState {}
 
 impl Command for QueryCommandGetLatestAccountState {
@@ -113,6 +117,7 @@ impl Command for QueryCommandGetLatestAccountState {
 }
 
 /// Sub command  to get transaction by account and sequence number from validator.
+/// 子命令从验证器按帐户和序列号获取交易。
 pub struct QueryCommandGetTxnByAccountSeq {}
 
 impl Command for QueryCommandGetTxnByAccountSeq {
@@ -155,6 +160,7 @@ impl Command for QueryCommandGetTxnByAccountSeq {
 }
 
 /// Sub command to query transactions by range from validator.
+/// 子命令可从验证器按范围查询事务。
 pub struct QueryCommandGetTxnByRange {}
 
 impl Command for QueryCommandGetTxnByRange {
@@ -174,6 +180,7 @@ impl Command for QueryCommandGetTxnByRange {
             Ok(comm_txns_and_events) => {
                 // Note that this should never panic because we shouldn't return items
                 // if the version wasn't able to be parsed in the first place
+                // 请注意，这永远不要惊慌，因为如果不能首先解析该版本，我们就不应该返回项目
                 let mut cur_version = params[1].parse::<u64>().expect("Unable to parse version");
                 for (txn, opt_events) in comm_txns_and_events {
                     println!(
@@ -199,7 +206,7 @@ impl Command for QueryCommandGetTxnByRange {
     }
 }
 
-/// Sub command to query events from validator.
+/// Sub command to query events from validator. 子命令从验证器查询事件。
 pub struct QueryCommandGetEvent {}
 
 impl Command for QueryCommandGetEvent {

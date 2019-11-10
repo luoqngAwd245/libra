@@ -211,7 +211,7 @@ impl TimelineIndex {
     }
 
     /// add transaction to index
-    /// Ìí¼Ó½»Ò×µ½Ë÷Òý
+    /// æ·»åŠ äº¤æ˜“åˆ°ç´¢å¼•
     pub(crate) fn insert(&mut self, txn: &mut MempoolTransaction) {
         self.timeline.insert(
             self.timeline_id,
@@ -222,7 +222,7 @@ impl TimelineIndex {
     }
 
     /// remove transaction from index
-    /// ´ÓË÷ÒýÒÆ³ý½»Ò×
+    /// ä»Žç´¢å¼•ç§»é™¤äº¤æ˜“
     pub(crate) fn remove(&mut self, txn: &MempoolTransaction) {
         if let TimelineState::Ready(timeline_id) = txn.timeline_state {
             self.timeline.remove(&timeline_id);

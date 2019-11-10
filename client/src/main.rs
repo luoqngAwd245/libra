@@ -136,6 +136,7 @@ fn main() -> std::io::Result<()> {
 }
 
 /// Print the help message for the client and underlying command.
+/// 打印客户端和基础命令的帮助消息。
 fn print_help(client_info: &str, commands: &[std::sync::Arc<dyn Command>]) {
     println!("{}", client_info);
     println!("usage: <command> <args>\n\nUse the following commands:\n");

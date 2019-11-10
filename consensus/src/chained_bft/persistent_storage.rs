@@ -286,10 +286,12 @@ impl<T: Payload> RecoveryData<T> {
         quorum_certs: &mut Vec<QuorumCert>,
     ) -> Vec<HashValue> {
         // prune all the blocks that don't have root as ancestor
+        // 修剪所有没有根作为祖先的块
         let mut tree = HashSet::new();
         let mut to_remove = vec![];
         tree.insert(root_id);
         // assume blocks are sorted by round already
+        // 假设块已经按轮排序
         blocks.retain(|block| {
             if tree.contains(&block.parent_id()) {
                 tree.insert(block.id());
@@ -367,6 +369,7 @@ impl<T: Payload> PersistentStorage<T> for StorageWriteProxy {
         let mut blocks = initial_data.2;
         let mut quorum_certs: Vec<_> = initial_data.3;
         // bootstrap the empty store with genesis block and qc.
+        // 用创世块和qc引导空存储。
         if blocks.is_empty() && quorum_certs.is_empty() {
             blocks.push(Block::make_genesis_block());
             quorum_certs.push(QuorumCert::certificate_for_genesis());
@@ -389,6 +392,7 @@ impl<T: Payload> PersistentStorage<T> for StorageWriteProxy {
         );
 
         // find the block corresponding to storage latest ledger info
+        // 查找与存储最新分类帐信息相对应的块
         let (_, ledger_info, _) = read_client
             .update_to_latest_ledger(0, vec![])
             .expect("unable to read ledger info from storage");

@@ -114,7 +114,7 @@ impl AdmissionControlNode {
             "admission_control",
         );
 
-        // Start Debug interface
+        // Start Debug interface 启动debug接口
         let debug_service =
             node_debug_interface_grpc::create_node_debug_interface(NodeDebugService::new());
         let _debug_handle = spawn_service_thread(

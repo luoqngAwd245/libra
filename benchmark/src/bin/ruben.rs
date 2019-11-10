@@ -20,6 +20,7 @@ use std::sync::Arc;
 
 /// Helper method to generate repeated TXNs from a function object, which is soon to be
 /// replaced by generic struct that implements TxnGenerator trait.
+/// 从函数对象生成重复TXN的Helper方法，该对象很快将被实现TxnGenerator特征的通用结构所取代。
 #[allow(bare_trait_objects)]
 fn gen_txn_load(
     txn_generator: &Fn(&WalletLibrary, &mut [AccountData]) -> Vec<SubmitTransactionRequest>,
@@ -38,6 +39,8 @@ fn gen_txn_load(
 /// Simply submit some TXNs to test the liveness of the network. Here we use ring TXN pattern
 /// to generate request, which scales linear with the number of accounts.
 /// In one epoch, we play the sequence of ring TXN requests repeatedly for num_rounds times.
+/// 只需提交一些TXN即可测试网络的运行状况。 在这里，我们使用环形TXN模式来生成请求，该请求与帐户数量成线性比例。
+///在一个纪元内，我们重复播放环形TXN请求的序列，持续num_rounds次。
 fn test_liveness(
     bm: &mut Benchmarker,
     accounts: &mut [AccountData],
@@ -64,6 +67,12 @@ fn test_liveness(
 /// * `epoch throughput`: Since single run of playing TXNs may have high variance, we can repeat
 ///   playing TXNs many times and calculate the averaged `burst throughput` along with standard
 ///   deviation (will be added shortly).
+/// 用成对的TXN模式测量“突发”和“历时”吞吐量。
+///*“突发吞吐量”：在运行TXN的一次运行中平均每秒提交的txns（例如enchmarker :: measure_txn_throughput）。
+/// 由于从提交到所有TXN提交都需要时间，因此从某种意义上说，此度量是用户方吞吐量。 在一个时期中，我们重复
+/// 执行成对TXN请求序列达num_rounds次。
+///*'epoch吞吐率'：由于单次运行的TXN可能会有较大的差异，因此我们可以重复播放TXN多次，并计算平均的
+///“突发吞吐率”和标准差（将很快添加）。
 pub(crate) fn measure_throughput(
     bm: &mut Benchmarker,
     accounts: &mut [AccountData],
@@ -118,6 +127,8 @@ pub(crate) fn create_benchmarker_from_opt(args: &Opt) -> Benchmarker {
 /// Benchmarker is not a long-lived job, so starting a server and expecting it to be polled
 /// continuously is not ideal. Directly pushing metrics when benchmarker is running
 /// can be achieved by using Pushgateway.
+/// Benchmarker并不是一项长期的工作，因此启动服务器并期望对其进行连续轮询不是理想的选择。
+/// 通过使用Pushgateway，可以在运行基准测试程序时直接推送指标。
 fn try_start_metrics_server(args: &Opt) {
     if let Some(metrics_server_address) = &args.metrics_server_address {
         let address = metrics_server_address.clone();

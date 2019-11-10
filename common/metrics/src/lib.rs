@@ -123,7 +123,7 @@ pub fn push_all_metrics_to_pushgateway_periodically(
 
 // Launches a background thread which will periodically collect metrics
 // every interval and write them to the provided file
-// 启动后台线程，该线程将定期收集每个时间间隔的指标并将其写入提供的文件
+// 鍚姩鍚庡彴绾跨▼锛岃绾跨▼灏嗗畾鏈熸敹闆嗘瘡涓椂闂撮棿闅旂殑鎸囨爣骞跺皢鍏跺啓鍏ユ彁渚涚殑鏂囦欢
 pub fn dump_all_metrics_to_file_periodically<P: AsRef<Path>>(
     dir_path: &P,
     file_name: &str,

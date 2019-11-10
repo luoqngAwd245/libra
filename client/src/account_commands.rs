@@ -148,6 +148,8 @@ impl Command for AccountCommandMint {
                 } else {
                     // If this value is updated, it must also be changed in
                     // setup_scripts/docker/mint/server.py
+                    // 如果此值已更新，则必须在
+                    //setup_scripts / docker / mint / server.py
                     println!("Mint request submitted");
                 }
             }

@@ -46,37 +46,49 @@ enum Mode {
 
 pub(crate) struct BlockProcessor<V> {
     /// Where the processor receives commands.
+    /// 处理器接收命令的位置
     command_receiver: mpsc::Receiver<Command>,
 
     /// The timestamp of the last committed ledger info.
+    /// 最后提交的分类帐信息的时间戳。
     committed_timestamp_usecs: u64,
 
     /// The in-memory Sparse Merkle Tree representing last committed state. This tree always has a
     /// single Subtree node (or Empty node) whose hash equals the root hash of the newest Sparse
     /// Merkle Tree in storage.
+    /// 内存中的稀疏Merkle树表示最后的提交状态。 该树始终只有一个子树节点（或“空”节点），
+    /// 其哈希值等于存储中最新的稀疏Merkle树的根哈希值。
     committed_state_tree: Rc<SparseMerkleTree>,
 
     /// The in-memory Merkle Accumulator representing all the committed transactions.
+    /// 内存中的Merkle累加器代表所有已提交的事务。
     committed_transaction_accumulator: Rc<Accumulator<TransactionAccumulatorHasher>>,
 
     /// The main block tree data structure that holds all the uncommitted blocks in memory.
+    /// 主块树数据结构将所有未提交的块保留在内存中。
     block_tree: BlockTree<TransactionBlock>,
 
     /// The blocks that are ready to be sent to storage. After pruning `block_tree` we always put
     /// the blocks here before sending them to storage, so in the case when storage is temporarily
     /// unavailable, we will still prune `block_tree` as normal but blocks will stay here for a bit
     /// longer.
+    /// 准备发送到存储的块。 修剪完block_tree之后，我们总是先将块放在这里，然后再将它们发送到存储中，
+    /// 因此，在存储暂时不可用的情况下，我们仍会像平常一样修剪一下block_tree，但是块会在这里停留一段时间
+    ///更长。
     blocks_to_store: VecDeque<TransactionBlock>,
 
     /// Client to storage service.
+    /// 客户端到存储服务。
     storage_read_client: Arc<dyn StorageRead>,
     storage_write_client: Arc<dyn StorageWrite>,
 
     /// The current mode. If we are doing state synchronization, we will refuse to serve normal
     /// execute_block and commit_block requests.
+    /// 当前模式。 如果要进行状态同步，则将拒绝处理正常的execute_block和commit_block请求。
     mode: Mode,
 
     /// Configuration for the VM. The block processor currently creates a new VM for each block.
+    /// VM的配置。 块处理器当前为每个块创建一个新的VM。
     vm_config: VMConfig,
 
     phantom: PhantomData<V>,
@@ -117,10 +129,12 @@ where
     }
 
     /// Keeps processing blocks until the command sender is disconnected.
+    /// 保持处理块，直到命令发送方断开连接。
     pub fn run(&mut self) {
         loop {
             // Fetch and process all commands sent by consensus until there is no more left in the
             // channel.
+            // 提取并处理以协商一致方式发送的所有命令，直到通道中不再剩余。
             while let Ok(cmd) = self.command_receiver.try_recv() {
                 self.process_command(cmd);
             }
@@ -136,6 +150,14 @@ where
             // chain to be saved if storage has recovered. (If consensus retries committing these
             // moved blocks, we won't find these blocks in the block tree because we only look up
             // the blocks in the block tree, so we will return an error.)
+            // 修剪块树并检查是否有合格的块准备发送到存储（已完成执行并标记为已提交的块）。
+            // 这会将这些块从块树移至“ self.blocks_to_store”。
+            //
+            // 注意：如果下面的save_blocks_to_storage失败，则这些块将保留在
+            //  self.blocks_to_store 可以，因为共识不会在收到错误后重试提交这些块。 相反，它将稍后
+            // 尝试提交后代块，该后代块将在块树中找到，并且如果恢复了存储，则会保存整个链。 （如果协商
+            // 一致地重试提交这些移动的块，我们将在块树中找不到这些块，因为我们仅在块树中查找这些块，
+            // 因此将返回错误。）
             self.blocks_to_store
                 .extend(self.block_tree.prune().into_iter());
             if !self.blocks_to_store.is_empty() {
@@ -159,18 +181,21 @@ where
 
             // If we do not have anything else to do, check if there is a block pending execution.
             // Continue if this function made progress (executed one block).
+            // 如果我们没有其他事情要做，请检查是否有待执行的块。 如果该功能取得了进展，则继续（执行了一个程序段）。
             if self.maybe_execute_block() {
                 continue;
             }
 
             // In case the previous attempt to send blocks to storage failed, we want to retry
             // instead of waiting for new command.
+            // 万一以前将块发送到存储的尝试失败，我们想重试而不是等待新命令。
             if !self.blocks_to_store.is_empty() {
                 continue;
             }
 
             // We really have nothing to do. Just block the thread until consensus sends us new
             // command.
+            // 我们真的无事可做。 只需阻塞线程，直到共识发送给我们新命令。
             match self.command_receiver.recv() {
                 Ok(cmd) => self.process_command(cmd),
                 Err(mpsc::RecvError) => break,
@@ -180,6 +205,7 @@ where
 
     /// Processes a single command from consensus. Note that this only modifies the block tree, the
     /// actual block execution and commit may happen later.
+    /// 从共识处理单个命令。 请注意，这仅会修改块树，实际的块执行和提交可能会在以后发生。
     fn process_command(&mut self, cmd: Command) {
         match cmd {
             Command::ExecuteBlock {
@@ -196,6 +222,7 @@ where
                 // If the block already exists, we simply store the sender via which the response
                 // will be sent when available. Otherwise construct a block and add to the block
                 // tree.
+                // 如果该块已经存在，我们只存储发件人，可用时将通过该发件人发送响应。 否则，构造一个块并添加到块树中。
                 match self.block_tree.get_block_mut(id) {
                     Some(block) => {
                         warn!("Block {:x} already exists.", id);
@@ -205,6 +232,8 @@ where
                         let block = TransactionBlock::new(transactions, parent_id, id, resp_sender);
                         // If `add_block` errors, we return the error immediately. Otherwise the
                         // response will be returned once the block is executed.
+                        // 如果`add_block`错误，我们将立即返回错误。 否则
+                        // 执行该块后，将返回响应。
                         if let Err(err) = self.block_tree.add_block(block) {
                             let resp = Err(format_err!("{}", err));
                             let mut block = err.into_block();
@@ -232,6 +261,8 @@ where
                         // We have successfully marked the block as committed, but the real
                         // response will not be sent to consensus until the block is successfully
                         // persisted in storage. So we just save the sender in the block.
+                        // 我们已成功将该区块标记为已提交，但实际除非成功阻止，否则回复将不会发送给共识
+                        // 持久存储。 因此，我们只是将发件人保存在块中。
                         block.set_commit_response_sender(resp_sender);
                     }
                     Err(err) => resp_sender
@@ -277,6 +308,7 @@ where
 
     /// Verifies the transactions based on the provided proofs and ledger info. If the transactions
     /// are valid, executes them and commits immediately if execution results match the proofs.
+    /// 根据提供的凭证和分类帐信息验证交易。 如果交易有效，则执行它们，如果执行结果与证明相符，则立即提交。
     fn execute_and_commit_chunk(
         &mut self,
         txn_list_with_proof: TransactionListWithProof,
@@ -313,6 +345,7 @@ where
             .unzip();
 
         // Construct a StateView and pass the transactions to VM.
+        // 构造一个StateView并将事务传递给VM。
         let db_root_hash = self.committed_state_tree.root_hash();
         let state_view = VerifiedStateView::new(
             Arc::clone(&self.storage_read_client),
@@ -331,6 +364,7 @@ where
 
         // Since other validators have committed these transactions, their status should all be
         // TransactionStatus::Keep.
+        // 由于其他验证者已经提交了这些事务，因此其状态都应为TransactionStatus :: Keep。
         for output in &vm_outputs {
             if let TransactionStatus::Discard(_) = output.status() {
                 bail!("Syncing transactions that should be discarded.");
@@ -349,6 +383,7 @@ where
 
         // Since we have verified the proofs, we just need to verify that each TransactionInfo
         // object matches what we have computed locally.
+        // 由于我们已经验证了证明，因此我们只需要验证每个TransactionInfo对象是否与我们在本地计算的对象匹配即可。
         let mut txns_to_commit = vec![];
         for ((txn, txn_data), (i, txn_info)) in itertools::zip_eq(
             itertools::zip_eq(transactions, output.transaction_data()),
@@ -379,6 +414,7 @@ where
 
         // If this is the last chunk corresponding to this ledger info, send the ledger info to
         // storage.
+        // 如果这是与此分类帐信息相对应的最后一块，则将分类帐信息发送到存储。
         let ledger_info_to_commit = if self.committed_transaction_accumulator.num_elements()
             + txns_to_commit.len() as u64
             == ledger_info_with_sigs.ledger_info().version() + 1
@@ -386,6 +422,8 @@ where
             // We have constructed the transaction accumulator root and checked that it matches the
             // given ledger info in the verification process above, so this check can possibly fail
             // only when input transaction list is empty.
+            // 我们已经构造了交易累加器根，并在上面的验证过程中检查了它是否与给定的分类帐信息匹配，因此，
+            // 只有在输入交易列表为空时，此检查才可能失败。
             ensure!(
                 ledger_info_with_sigs
                     .ledger_info()
@@ -422,6 +460,8 @@ where
     /// Verifies proofs using provided ledger info. Also verifies that the version of the first
     /// transaction matches the latest committed transaction. If the first few transaction happens
     /// to be older, returns how many need to be skipped and the first version to be committed.
+    /// 使用提供的分类帐信息验证证明。 还要验证第一个事务的版本与最新提交的事务匹配。 如果前几个事务
+    /// 恰好是旧的，则返回需要跳过的事务数量和要提交的第一个版本。
     fn verify_chunk(
         &self,
         txn_list_with_proof: &TransactionListWithProof,
@@ -451,6 +491,7 @@ where
     }
 
     /// If `save_blocks_to_storage` below fails, we retry based on this setting.
+    /// 如果下面的“ save_blocks_to_storage”失败，我们将根据此设置重试。
     fn storage_retry_backoff() -> ExponentialBackoff {
         let mut backoff = ExponentialBackoff::default();
         backoff.max_interval = std::time::Duration::from_secs(10);
@@ -469,6 +510,14 @@ where
     /// ```
     /// and only `C` and `E` have signatures, we will send `A`, `B` and `C` in the first batch,
     /// then `D` and `E` later in the another batch.
+    /// 将符合条件的块保存到持久性存储中。 如果成功保留了这些块，则将从“ self.blocks_to_store”中将其
+    /// 删除，并修剪这些块中的内存稀疏Merkle树。 否则什么也不会发生。
+    ///
+    ///如果我们有多个块，但并非所有块都具有签名，则可以将它们分批发送到存储中。 例如，如果我们有
+    ///  文字
+    ///  A <-B <-C <-D <-E
+    ///```
+    ///并且只有“ C”和“ E”具有签名，我们将在第一批中发送“ A”，“ B”和“ C”，然后在另一批中发送“ D”和“ E”。
     fn save_blocks_to_storage(&mut self) -> Result<()> {
         // The blocks we send to storage in this batch. In the above example, this means block A, B
         // and C.
@@ -484,6 +533,7 @@ where
 
         // All transactions that need to go to storage. In the above example, this means all the
         // transactions in A, B and C whose status == TransactionStatus::Keep.
+        // 所有需要存储的事务。 在上面的示例中，这表示状态为== TransactionStatus :: Keep的A，B和C中的所有事务。
         let mut txns_to_commit = vec![];
         let mut num_accounts_created = 0;
         for block in &block_batch {
@@ -514,6 +564,7 @@ where
         // Check that the version in ledger info (computed by consensus) matches the version
         // computed by us. TODO: we should also verify signatures and check that timestamp is
         // strictly increasing.
+        // 检查分类帐信息中的版本（通过共识计算）与我们计算的版本匹配。 待办事项：我们还应该验证签名并检查时间戳是否在严格增加。
         let ledger_info_with_sigs = last_block
             .ledger_info_with_sigs()
             .as_ref()
@@ -543,10 +594,12 @@ where
             )?;
         }
         // Only bump the counter when the commit succeeds.
+        // 仅在提交成功时增加计数器。
         OP_COUNTERS.inc_by("num_accounts", num_accounts_created);
 
         // Now that the blocks are persisted successfully, we can reply to consensus and update
         // in-memory state.
+        // 现在，这些块已成功持久存在，我们可以回复共识并更新内存中状态。
         self.committed_timestamp_usecs = ledger_info_with_sigs.ledger_info().timestamp_usecs();
         self.committed_state_tree = last_block.clone_state_tree();
         self.committed_transaction_accumulator = last_block.clone_transaction_accumulator();
@@ -573,6 +626,8 @@ where
     /// Checks if there is a block in the tree ready for execution, if so run it by calling the VM.
     /// Returns `true` if a block was successfully executed, `false` if there was no block to
     /// execute.
+    /// 检查树中是否有准备好执行的块，如果有，请通过调用VM来运行它。 如果成功执行了一个块，则返回“ true”；
+    /// 如果没有要执行的块，则返回“ false”。
     fn maybe_execute_block(&mut self) -> bool {
         let id = match self.block_tree.get_block_to_execute() {
             Some(block_id) => block_id,
@@ -598,6 +653,7 @@ where
             .expect("Block to execute should exist.");
 
         // Construct a StateView and pass the transactions to VM.
+        // 构造一个StateView并将事务传递给VM。
         let db_root_hash = self.committed_state_tree.root_hash();
         let state_view = VerifiedStateView::new(
             Arc::clone(&self.storage_read_client),
@@ -646,6 +702,8 @@ where
                 // consensus.
                 // TODO: The VM will support a special transaction to set the validators for the
                 // next epoch that is part of a block execution.
+                // 现在我们有了根哈希和执行状态，可以将响应发送给共识。
+                // TODO：VM将支持特殊事务，以为块执行的下一个时期设置验证器。
                 let execute_block_response =
                     ExecuteBlockResponse::new(root_hash, status, version, None);
                 block_to_execute.set_execute_block_response(execute_block_response);
@@ -657,6 +715,7 @@ where
                 )));
                 // If we failed to execute this block, remove the block and its descendants from
                 // the block tree.
+                // 如果我们无法执行此块，请从块树中删除该块及其后代。
                 self.block_tree.remove_subtree(id);
             }
         }
@@ -664,6 +723,7 @@ where
 
     /// Given id of the block that is about to be executed, returns the state tree and the
     /// transaction accumulator at the end of the parent block.
+    /// 给定将要执行的块的ID，将在父块的末尾返回状态树和事务累加器。
     fn get_trees_from_parent(
         &self,
         id: HashValue,
@@ -689,6 +749,7 @@ where
     }
 
     /// Post-processing of what the VM outputs. Returns the entire block's output.
+    /// VM输出的后处理。 返回整个块的输出。
     fn process_vm_outputs(
         mut account_to_btree: HashMap<AccountAddress, BTreeMap<Vec<u8>, Vec<u8>>>,
         account_to_proof: HashMap<HashValue, SparseMerkleProof>,
@@ -700,11 +761,13 @@ where
         // The data of each individual transaction. For convenience purpose, even for the
         // transactions that will be discarded, we will compute its in-memory Sparse Merkle Tree
         // (it will be identical to the previous one).
+        // 每笔交易的数据。 为了方便起见，即使对于将被丢弃的交易，我们也会计算其内存中的稀疏Merkle树（它将与前一个相同）。
         let mut txn_data = vec![];
         let mut current_state_tree = previous_state_tree;
         // The hash of each individual TransactionInfo object. This will not include the
         // transactions that will be discarded, since they do not go into the transaction
         // accumulator.
+        // 每个单个TransactionInfo对象的哈希。 这将不包括将被丢弃的事务，因为它们不会进入事务累加器。
         let mut txn_info_hashes = vec![];
 
         let proof_reader = ProofReader::new(account_to_proof);
@@ -730,6 +793,7 @@ where
                     );
                     // Compute hash for the TransactionInfo object. We need the hash of the
                     // transaction itself, the state root hash as well as the event root hash.
+                    // 计算TransactionInfo对象的哈希。 我们需要事务本身的哈希，状态根哈希以及事件根哈希。
                     let txn_info = TransactionInfo::new(
                         signed_txn.hash(),
                         state_tree.root_hash(),
@@ -774,6 +838,7 @@ where
     /// For all accounts modified by this transaction, find the previous blob and update it based
     /// on the write set. Returns the blob value of all these accounts as well as the newly
     /// constructed state tree.
+    /// 对于此事务修改的所有帐户，找到前一个Blob并根据写集对其进行更新。 返回所有这些帐户以及新构造的状态树的Blob值。
     fn process_write_set(
         transaction: &SignedTransaction,
         account_to_btree: &mut HashMap<AccountAddress, BTreeMap<Vec<u8>, Vec<u8>>>,
@@ -789,6 +854,7 @@ where
         let mut num_accounts_created = 0;
 
         // Find all addresses this transaction touches while processing each write op.
+        // 在处理每个写操作时，查找此事务涉及的所有地址。
         let mut addrs = HashSet::new();
         for (access_path, write_op) in write_set.into_iter() {
             let address = access_path.address;
@@ -798,6 +864,7 @@ where
                     let account_btree = entry.get_mut();
                     // TODO(gzh): we check account creation here for now. Will remove it once we
                     // have a better way.
+                    // TODO（gzh）：我们现在在这里检查帐户的创建。 一旦有更好的方法，将其删除。
                     if account_btree.is_empty() {
                         num_accounts_created += 1;
                     }
@@ -807,6 +874,7 @@ where
                     // Before writing to an account, VM should always read that account. So we
                     // should not reach this code path. The exception is genesis transaction (and
                     // maybe other FTVM transactions).
+                    // 在写入帐户之前，VM应始终读取该帐户。 因此，我们不应到达此代码路径。 例外是创世交易（可能还有其他FTVM交易）。
                     match transaction.payload() {
                         TransactionPayload::Program(_) => {
                             bail!("Write set should be a subset of read set.")

@@ -3,6 +3,7 @@
 
 //! The following is a slightly modified version of the file with the same name in the
 //! rust-wallet crate. The original file may be found here:
+//! 以下是在rust-wallet板条箱中具有相同名称的文件的略微修改版本。 原始文件可以在这里找到：
 //!
 //! https://github.com/rust-bitcoin/rust-wallet/blob/master/wallet/src/mnemonic.rs
 use crate::error::*;
@@ -21,6 +22,7 @@ use std::{
 use tempfile::NamedTempFile;
 
 /// Mnemonic seed for deterministic key derivation
+/// 确定性密钥派生的助记种子
 pub struct Mnemonic(Vec<&'static str>);
 
 impl ToString for Mnemonic {
@@ -31,6 +33,7 @@ impl ToString for Mnemonic {
 
 impl Mnemonic {
     /// Generate mnemonic from string
+    /// 从字符串生成助记符
     pub fn from(s: &str) -> Result<Mnemonic> {
         let words: Vec<_> = s.split(' ').collect();
         if words.len() < 6 || words.len() % 6 != 0 {
@@ -52,6 +55,7 @@ impl Mnemonic {
     }
 
     /// Generate mnemonic from byte-array
+    /// 从字节数组生成助记符
     pub fn mnemonic(data: &[u8]) -> Result<Mnemonic> {
         if data.len() % 4 != 0 {
             return Err(WalletError::LibraWalletGeneric(
@@ -87,7 +91,7 @@ impl Mnemonic {
         Ok(Mnemonic(memo))
     }
 
-    /// Write mnemonic to output_file_path
+    /// Write mnemonic to output_file_path 将助记符写入output_file_path
     pub fn write(&self, output_file_path: &Path) -> Result<()> {
         if output_file_path.exists() && !output_file_path.is_file() {
             return Err(WalletError::LibraWalletGeneric(format!(

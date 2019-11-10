@@ -12,6 +12,7 @@ use std::{collections::HashMap, sync::Arc};
 use types::account_address::ADDRESS_LENGTH;
 
 /// Print the error and bump up error counter.
+/// 打印错误并增加错误计数器。
 pub fn report_error(msg: &str, e: Error) {
     println!("[ERROR] {}: {}", msg, pretty_format_error(e));
     COUNTER_CLIENT_ERRORS.inc();
@@ -41,11 +42,13 @@ pub fn blocking_cmd(cmd: &str) -> bool {
 }
 
 /// Check whether a command is debugging command.
+/// 检查命令是否为调试命令。
 pub fn debug_format_cmd(cmd: &str) -> bool {
     cmd.ends_with('?')
 }
 
 /// Check whether the input string is a valid libra address.
+/// 检查输入的字符串是否为有效的天秤地址。
 pub fn is_address(data: &str) -> bool {
     match hex::decode(data) {
         Ok(vec) => vec.len() == ADDRESS_LENGTH,
@@ -82,6 +85,7 @@ pub fn parse_cmd(cmd_str: &str) -> Vec<&str> {
 }
 
 /// Print the help message for all sub commands.
+/// 打印所有子命令的帮助消息。
 pub fn print_subcommand_help(parent_command: &str, commands: &[Box<dyn Command>]) {
     println!(
         "usage: {} <arg>\n\nUse the following args for this command:\n",

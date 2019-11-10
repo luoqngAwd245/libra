@@ -13,6 +13,7 @@ where
 {
     fn drop(&mut self) {
         // Drop guard: release lock, decrement internal reference counter on lock
+        // 防坠落装置：释放锁定，内部参考计数器递减锁定
         self.mutex_guard
             .take()
             .expect("ExistGuard should have mutex_guard on drop");

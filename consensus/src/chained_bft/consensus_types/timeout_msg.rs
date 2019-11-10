@@ -26,6 +26,7 @@ use types::{
 
 // Internal use only. Contains all the fields in PaceMakerTimeout that contributes to the
 // computation of its hash.
+// 限内部使用。 包含PaceMakerTimeout中有助于其哈希计算的所有字段。
 struct PacemakerTimeoutSerializer {
     round: Round,
     author: Author,
@@ -53,6 +54,9 @@ impl CryptoHash for PacemakerTimeoutSerializer {
 /// timeout for a round is reached.  Once f+1 PacemakerTimeout structs
 /// from unique authors is gathered it forms a TimeoutCertificate.  A TimeoutCertificate is
 /// a proof that will cause a replica to advance to the minimum round in the TimeoutCertificate.
+/// 当达到当地的一轮超时时间时，起搏器将将该消息作为TimeoutMsg的一部分进行广播。 收集到来自唯一作者的f + 1
+/// PacemakerTimeout结构后，它将形成TimeoutCertificate。 TimeoutCertificate是一种证明，它将使副本前进到
+/// TimeoutCertificate中的最小回合。
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct PacemakerTimeout {
     round: Round,
@@ -80,6 +84,7 @@ impl PacemakerTimeout {
     }
 
     /// Calculates digest for this struct
+    /// 计算该结构的摘要
     pub fn digest(&self) -> HashValue {
         Self::pacemaker_timeout_digest(self.author, self.round)
     }
@@ -89,6 +94,7 @@ impl PacemakerTimeout {
     }
 
     /// Verifies that this message has valid signature
+    /// 验证此消息具有有效签名
     pub fn verify(
         &self,
         validator: &ValidatorVerifier<Ed25519PublicKey>,
@@ -97,6 +103,7 @@ impl PacemakerTimeout {
     }
 
     /// Returns the author of the timeout
+    /// 返回超时的作者
     pub fn author(&self) -> Author {
         self.author
     }
@@ -136,6 +143,7 @@ impl FromProto for PacemakerTimeout {
 
 // Internal use only. Contains all the fields in TimeoutMsg that contributes to the computation of
 // its hash.
+// 限内部使用。 包含TimeoutMsg中有助于其哈希计算的所有字段。
 struct TimeoutMsgSerializer {
     pacemaker_timeout_digest: HashValue,
 }
@@ -167,6 +175,11 @@ impl CryptoHash for TimeoutMsgSerializer {
 /// as justification). If the expected proposer has a quorum certificate on round r-1, it need
 /// not wait until n-f such messages are received and can make a proposal justified
 /// by this quorum certificate.
+/// 当达到起搏器的本地超时时间时，该消息将由起搏器广播。 广播开始后，每次超时都会重试，直到回合更改为止。
+/// 需要重试，因为，例如，如果一轮回合的提议者没有响应，则它可能不会提议它是否仅错过一个PacemakerTimeoutMsg。
+///
+///预期的提议者将等到收到n-f个这样的消息，然后提出提议以确保活动性（下一个提议具有所有副本中最高的仲裁证书作为理由）。
+/// 如果预期的提议者在第r-1回合上具有法定证书，则不必等到收到n-f个这样的消息，即可提出由该法定证书证明合理的提议。
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub struct TimeoutMsg {
     sync_info: SyncInfo,
@@ -264,17 +277,21 @@ impl IntoProto for TimeoutMsg {
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 /// Proposal can include this timeout certificate as justification for switching to next round
+/// 提案可以将此超时证书作为切换至下一轮的理由
 pub struct PacemakerTimeoutCertificate {
     round: Round,
     timeouts: Vec<PacemakerTimeout>,
 }
 
 /// PacemakerTimeoutCertificate verification errors.
+/// PacemakerTimeoutCertificate验证错误。
 #[derive(Debug, PartialEq)]
 pub enum PacemakerTimeoutCertificateVerificationError {
     /// Number of signed timeouts is less then required quorum size
+    /// 签名超时数小于所需的仲裁大小
     NoQuorum,
     /// Round in message does not match calculated rounds based on signed timeouts
+    /// 舍入消息与基于签名超时计算出的舍入不匹配
     RoundMismatch { expected: Round },
     /// The signature on one of timeouts doesn't pass verification
     SigVerifyError(Author, VerifyError),
@@ -329,11 +346,13 @@ impl PacemakerTimeoutCertificate {
     }
 
     /// Returns the round of the timeout
+    /// 返回超时时间
     pub fn round(&self) -> Round {
         self.round
     }
 
     /// Returns the timeouts that certify the PacemakerTimeoutCertificate
+    /// 返回证明PacemakerTimeoutCertificate的超时
     #[allow(dead_code)]
     pub fn timeouts(&self) -> &Vec<PacemakerTimeout> {
         &self.timeouts

@@ -37,8 +37,8 @@ impl OutputTee {
 
     /// Start new threads for teeing output of stdout/err streams
     /// Threads will terminate when streams are closed
-    /// Îªstdout / errÁ÷µÄÊä³öÆô¶¯ÐÂÏß³Ì
-    /// Á÷¹Ø±ÕµÄÊ×Ïß³ÌÒ²ÖÕÖ¹
+    /// ä¸ºstdout / erræµçš„è¾“å‡ºå¯åŠ¨æ–°çº¿ç¨‹
+    /// æµå…³é—­çš„é¦–çº¿ç¨‹ä¹Ÿç»ˆæ­¢
     pub fn start(self) -> OutputTeeGuard {
         let capture = self.capture;
         let log_file = self.log_file;

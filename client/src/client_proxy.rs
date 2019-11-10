@@ -89,20 +89,24 @@ pub struct IndexAndSequence {
 }
 
 /// Proxy handling CLI commands/inputs.
+/// 代理处理CLI命令/输入。
 pub struct ClientProxy {
     /// client for admission control interface.
+    /// 客户端的准入控制接口。
     pub client: GRPCClient,
     /// Created accounts.
+    /// 创建账户
     pub accounts: Vec<AccountData>,
     /// Address to account_ref_id map.
     address_to_ref_id: HashMap<AccountAddress, usize>,
-    /// Host that operates a faucet service
+    /// Host that operates a faucet service 经营水龙头服务的主机
     faucet_server: String,
-    /// Account used for mint operations.
+    /// Account used for mint operations. 用于薄荷操作的帐户。
     pub faucet_account: Option<AccountData>,
-    /// Wallet library managing user accounts.
+    /// Wallet library managing user accounts. 钱包库管理用户帐户。
     wallet: WalletLibrary,
     /// Whether to sync with validator on account creation.
+    /// 在帐户创建时是否与验证程序同步。
     sync_on_wallet_recovery: bool,
     /// temp files (alive for duration of program)
     temp_files: Vec<TempPath>,
@@ -191,6 +195,7 @@ impl ClientProxy {
     }
 
     /// Returns the account index that should be used by user to reference this account
+    /// 返回用户应用来引用该帐户的帐户索引
     pub fn create_next_account(&mut self, sync_with_validator: bool) -> Result<AddressAndIndex> {
         let (address, _) = self.wallet.new_address()?;
 
@@ -201,6 +206,7 @@ impl ClientProxy {
     }
 
     /// Print index and address of all accounts.
+    /// 打印所有帐户的索引和地址。
     pub fn print_all_accounts(&self) {
         if self.accounts.is_empty() {
             println!("No user accounts");
@@ -227,11 +233,13 @@ impl ClientProxy {
     }
 
     /// Clone all accounts held in the client.
+    /// 克隆客户端中持有的所有帐户。
     pub fn copy_all_accounts(&self) -> Vec<AccountData> {
         self.accounts.clone()
     }
 
     /// Set the account of this client instance.
+    /// 设置此客户端实例的帐户。
     pub fn set_accounts(&mut self, accounts: Vec<AccountData>) -> Vec<AddressAndIndex> {
         self.accounts.clear();
         self.address_to_ref_id.clear();
@@ -243,6 +251,7 @@ impl ClientProxy {
     }
 
     /// Get balance from validator for the account specified.
+    /// 从验证程序获取指定帐户的余额。
     pub fn get_balance(&mut self, space_delim_strings: &[&str]) -> Result<String> {
         ensure!(
             space_delim_strings.len() == 2,
@@ -257,6 +266,7 @@ impl ClientProxy {
     }
 
     /// Get the latest sequence number from validator for the account specified.
+    /// 从验证器获取指定帐户的最新序列号。
     pub fn get_sequence_number(&mut self, space_delim_strings: &[&str]) -> Result<u64> {
         ensure!(
             space_delim_strings.len() == 2 || space_delim_strings.len() == 3,
@@ -288,6 +298,7 @@ impl ClientProxy {
     }
 
     /// Mints coins for the receiver specified.
+    /// 将sequence_number设置为最新的。
     pub fn mint_coins(&mut self, space_delim_strings: &[&str], is_blocking: bool) -> Result<()> {
         ensure!(
             space_delim_strings.len() == 3,
@@ -303,6 +314,7 @@ impl ClientProxy {
     }
 
     /// Waits for the next transaction for a specific address and prints it
+    /// 等待下一个特定地址的交易并打印
     pub fn wait_for_transaction(&mut self, account: AccountAddress, sequence_number: u64) {
         let mut max_iterations = 5000;
         print!("[waiting ");
@@ -330,6 +342,8 @@ impl ClientProxy {
 
     /// Transfer num_coins from sender account to receiver. If is_blocking = true,
     /// it will keep querying validator till the sequence number is bumped up in validator.
+    /// 将num_coins从发送者帐户转移到接收者。 如果is_blocking = true，它将继续查询验证器，直到序列号
+    /// 在验证器中增大为止。
     pub fn transfer_coins_int(
         &mut self,
         sender_account_ref_id: usize,
@@ -429,7 +443,7 @@ impl ClientProxy {
         )
     }
 
-    /// Compile move program
+    /// Compile move program 编译移动程序
     pub fn compile_program(&mut self, space_delim_strings: &[&str]) -> Result<String> {
         let address = self.get_account_address_from_parameter(space_delim_strings[1])?;
         let file_path = space_delim_strings[2];
@@ -542,7 +556,7 @@ impl ClientProxy {
         self.submit_program(space_delim_strings, program)
     }
 
-    /// Execute custom script
+    /// Execute custom script 执行自定义脚本
     pub fn execute_script(&mut self, space_delim_strings: &[&str]) -> Result<()> {
         let program: Program = serde_json::from_slice(&fs::read(space_delim_strings[2])?)?;
         let arguments: Vec<_> = space_delim_strings[3..]
@@ -557,6 +571,7 @@ impl ClientProxy {
     }
 
     /// Get the latest account state from validator.
+    /// 从验证器获取最新的帐户状态。
     pub fn get_latest_account_state(
         &mut self,
         space_delim_strings: &[&str],
@@ -570,6 +585,7 @@ impl ClientProxy {
     }
 
     /// Get committed txn by account and sequence number.
+    /// 通过帐户和序列号获取提交的txn。
     pub fn get_committed_txn_by_acc_seq(
         &mut self,
         space_delim_strings: &[&str],
@@ -602,6 +618,7 @@ impl ClientProxy {
     }
 
     /// Get committed txn by account and sequence number
+    /// 通过帐户和序列号获取提交的TXN
     pub fn get_committed_txn_by_range(
         &mut self,
         space_delim_strings: &[&str],
@@ -641,6 +658,8 @@ impl ClientProxy {
 
     /// Get account address from parameter. If the parameter is string of address, try to convert
     /// it to address, otherwise, try to convert to u64 and looking at TestClient::accounts.
+    /// 从参数获取帐户地址。 如果参数是地址字符串，请尝试将其转换为地址，否则，请尝试转换为u64并
+    /// 查看TestClient :: accounts。
     pub fn get_account_address_from_parameter(&self, para: &str) -> Result<AccountAddress> {
         match is_address(para) {
             true => ClientProxy::address_from_strings(para),
@@ -666,6 +685,7 @@ impl ClientProxy {
     }
 
     /// Get events by account and event type with start sequence number and limit.
+    /// 按帐户和事件类型获取事件，并带有开始序列号和限制。
     pub fn get_events_by_account_and_type(
         &mut self,
         space_delim_strings: &[&str],
@@ -708,6 +728,7 @@ impl ClientProxy {
     }
 
     /// Write mnemonic recover to the file specified.
+    /// 将助记符恢复写入指定的文件。
     pub fn write_recovery(&self, space_delim_strings: &[&str]) -> Result<()> {
         ensure!(
             space_delim_strings.len() == 2,
@@ -720,6 +741,7 @@ impl ClientProxy {
     }
 
     /// Recover wallet accounts from file and return vec<(account_address, index)>.
+    /// 从文件中恢复钱包帐户并返回vec <（account_address，index）>。
     pub fn recover_wallet_accounts(
         &mut self,
         space_delim_strings: &[&str],
@@ -797,6 +819,7 @@ impl ClientProxy {
     /// Get account using specific address.
     /// Sync with validator for account sequence number in case it is already created on chain.
     /// This assumes we have a very low probability of mnemonic word conflict.
+    /// 使用特定地址获取帐户，如果已在链上创建，则与验证程序同步以获取帐户序列号。 假设我们记忆单词冲突的可能性非常低。
     fn get_account_data_from_address(
         client: &GRPCClient,
         address: AccountAddress,
@@ -847,7 +870,7 @@ impl ClientProxy {
         Ok(wallet)
     }
 
-    /// Set wallet instance used by this client.
+    /// Set wallet instance used by this client. 设置该客户端使用的钱包实例。
     fn set_wallet(&mut self, wallet: WalletLibrary) {
         self.wallet = wallet;
     }
@@ -945,7 +968,7 @@ impl ClientProxy {
 
     fn convert_to_micro_libras(input: &str) -> Result<u64> {
         ensure!(!input.is_empty(), "Empty input not allowed for libra unit");
-        // This is not supposed to panic as it is used as constant here.
+        // This is not supposed to panic as it is used as constant here. 这不应该引起恐慌，因为在此处将其用作常量。
         let max_value = Decimal::from_u64(std::u64::MAX).unwrap() / Decimal::new(1_000_000, 0);
         let scale = input.find('.').unwrap_or(input.len() - 1);
         ensure!(
@@ -966,7 +989,7 @@ impl ClientProxy {
         value.to_u64().ok_or_else(|| format_err!("invalid value"))
     }
 
-    /// Craft a transaction request.
+    /// Craft a transaction request. 制定交易请求。
     fn create_submit_transaction_req(
         &self,
         program: Program,

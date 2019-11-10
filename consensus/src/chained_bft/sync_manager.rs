@@ -402,6 +402,7 @@ impl BlockRetriever {
         if attempt == 0 {
             // remove preferred_peer if its in list of peers
             // (strictly speaking it is not required to be there)
+            // 如果它在对等体列表中，则删除preferred_peer（严格来说，不需要它）
             for i in 0..peers.len() {
                 if *peers[i] == self.preferred_peer {
                     peers.remove(i);

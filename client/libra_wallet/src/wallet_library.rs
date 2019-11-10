@@ -96,6 +96,7 @@ impl WalletLibrary {
     }
 
     /// Get the current ChildNumber in u64 format
+    /// 以u64格式获取当前的ChildNumber
     pub fn key_leaf(&self) -> u64 {
         self.key_leaf.0
     }
@@ -196,6 +197,7 @@ impl WalletLibrary {
 }
 
 /// WalletLibrary naturally support TransactionSigner trait.
+/// WalletLibrary自然支持TransactionSigner特性。
 impl TransactionSigner for WalletLibrary {
     fn sign_txn(&self, raw_txn: RawTransaction) -> failure::prelude::Result<SignedTransaction> {
         Ok(self.sign_txn(raw_txn)?)

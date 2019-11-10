@@ -449,12 +449,14 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
         if initial_data.need_sync() {
             loop {
                 // make sure we sync to the root state in case we're not
+                // 确保我们同步到根状态，以防万一
                 let status = block_on(state_computer.sync_to(initial_data.root_ledger_info()));
                 match status {
                     Ok(SyncStatus::Finished) => break,
                     Ok(SyncStatus::DownloadFailed) => {
                         warn!("DownloadFailed, we may not establish connection with peers yet, sleep and retry");
                         // we can remove this when we start to handle NewPeer/LostPeer events.
+                        // 我们可以在开始处理NewPeer / LostPeer事件时将其删除。
                         thread::sleep(Duration::from_secs(2));
                     }
                     Ok(e) => panic!(
@@ -474,6 +476,7 @@ impl<T: Payload, P: ProposerInfo> StateMachineReplication for ChainedBftSMR<T, P
         }
 
         // the signer is only stored in the SMR to be provided here
+        // 签名者仅存储在要在此处提供的SMR中
         let opt_signer = std::mem::replace(&mut self.signer, None);
         if let Some(signer) = opt_signer {
             let block_store = Arc::new(block_on(BlockStore::new(

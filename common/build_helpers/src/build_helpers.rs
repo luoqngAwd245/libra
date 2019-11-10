@@ -10,11 +10,14 @@ use walkdir::WalkDir;
 // Compiles all proto files under proto root and dependent roots.
 // For example, if there is a file `src/a/b/c.proto`, it will generate `src/a/b/c.rs` and
 // `src/a/b/c_grpc.rs`.
+// 编译原始根目录和从属根目录下的所有原始文件。
+//例如，如果有一个文件src / a / b / c.proto，它将生成src / a / b / c.rs和src / a / b / c_grpc.rs。
 pub fn compile_proto(proto_root: &str, dependent_roots: Vec<&str>, generate_client_code: bool) {
     let mut additional_includes = vec![];
     env::remove_var("GO111MODULE");
     for dependent_root in dependent_roots {
         // First compile dependent directories
+        // 首先编译依赖目录
         compile_dir(
             &dependent_root,
             vec![], /* additional_includes */
@@ -22,12 +25,13 @@ pub fn compile_proto(proto_root: &str, dependent_roots: Vec<&str>, generate_clie
         );
         additional_includes.push(Path::new(dependent_root).to_path_buf());
     }
-    // Now compile this directory
+    // Now compile this directory 现在编译这个目录
     compile_dir(&proto_root, additional_includes, generate_client_code);
 }
 
 // Compile all of the proto files in proto_root directory and use the additional
 // includes when compiling.
+// 编译proto_root目录中的所有proto文件，并在编译时使用其他包含文件。
 pub fn compile_dir(
     proto_root: &str,
     additional_includes: Vec<PathBuf>,

@@ -126,13 +126,14 @@ impl<T> Block<T>
 where
     T: Serialize + Default + CanonicalSerialize,
 {
-    // Make an empty genesis block
+    // Make an empty genesis block 创建创世区块
     pub fn make_genesis_block() -> Self {
         let ancestor_id = HashValue::zero();
         let genesis_validator_signer = ValidatorSigner::<Ed25519PrivateKey>::genesis();
         let state = ExecutedState::state_for_genesis();
         // Genesis carries a placeholder quorum certificate to its parent id with LedgerInfo
         // carrying information about version `0`.
+        // 创世纪通过其LedgerInfo携带有关版本'0'的信息的占位符仲裁证书提供给其父ID。
         let genesis_quorum_cert = QuorumCert::new(
             ancestor_id,
             state,
@@ -216,6 +217,7 @@ where
         validator_signer: &ValidatorSigner<Ed25519PrivateKey>,
     ) -> Self {
         // A block must carry a QC to its parent.
+        // 块必须对其父进行质量检查。
         checked_precondition_eq!(quorum_cert.certified_block_id(), parent_block.id());
         checked_precondition!(round > parent_block.round());
         Block::new_internal(

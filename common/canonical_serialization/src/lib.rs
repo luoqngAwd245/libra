@@ -168,6 +168,7 @@ where
     }
 
     /// Create a SimpleSerializer on the fly and serialize `object`
+    /// 动态创建SimpleSerializer并序列化“对象”
     pub fn serialize(object: &impl CanonicalSerialize) -> Result<W> {
         let mut serializer = Self::default();
         object.serialize(&mut serializer)?;
@@ -175,6 +176,7 @@ where
     }
 
     /// Consume the SimpleSerializer and return the output
+    /// 消费SimpleSerializer并返回输出
     pub fn get_output(self) -> W {
         self.output
     }
@@ -225,6 +227,7 @@ where
         );
 
         // first add the length as a 4-byte integer
+        // 首先将长度添加为4字节整数
         self.output.write_u32::<Endianness>(v.len() as u32)?;
         self.output.write_all(v)?;
         Ok(self)

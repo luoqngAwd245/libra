@@ -144,6 +144,7 @@ impl<T> FusedStream for Receiver<T> {
 
 /// `Receiver` implements `Stream` in the same way as `mpsc::Stream`, but it decrements the
 /// associated `IntGauge` when it gets polled successfully.
+/// 接收器以与mpsc :: Stream相同的方式实现Stream，但是当它被成功轮询时，它会减少相关的IntGauge。
 impl<T> Stream for Receiver<T> {
     type Item = T;
 
@@ -157,6 +158,7 @@ impl<T> Stream for Receiver<T> {
 }
 
 /// Similar to `mpsc::channel`, `new` creates a pair of `Sender` and `Receiver`
+/// 与`mpsc :: channel`类似，`new`创建一对`Sender`和`Receiver`。
 pub fn new<T>(size: usize, gauge: &IntGauge) -> (Sender<T>, Receiver<T>) {
     gauge.set(0);
     let (sender, receiver) = mpsc::channel(size);

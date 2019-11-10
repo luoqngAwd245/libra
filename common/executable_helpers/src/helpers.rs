@@ -20,6 +20,7 @@ pub fn load_configs_from_args(args: &ArgMatches<'_>) -> NodeConfig {
 
     if args.is_present(ARG_CONFIG_PATH) {
         // Allow peer id over-ride via command line
+        // 通过命令行允许对等ID覆盖
         let peer_id = value_t!(args, ARG_PEER_ID, String).ok();
 
         let config_path =
@@ -30,6 +31,7 @@ pub fn load_configs_from_args(args: &ArgMatches<'_>) -> NodeConfig {
         info!("Starting Full {}", node_config.base.peer_id);
     } else {
         // Note we will silently ignore --peer_id arg here
+        // 注意，我们将在此处默默忽略--peer_id arg
         info!("Loading test configs");
         node_config = NodeConfigHelpers::get_single_node_test_config(false /* random ports */);
 
@@ -38,6 +40,7 @@ pub fn load_configs_from_args(args: &ArgMatches<'_>) -> NodeConfig {
 
     // Node configuration contains important ephemeral port information and should
     // not be subject to being disabled as with other logs
+    // 节点配置包含重要的临时端口信息，不应像其他日志一样被禁用
     println!("Using node config {:?}", &node_config);
 
     node_config

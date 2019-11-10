@@ -88,6 +88,7 @@ pub enum ProposalReject {
     },
 
     /// Did not find a parent for the proposed block
+    /// 找不到拟议街区区块的父母
     #[fail(
         display = "Proposal for {} at round {} error: parent {} not found",
         proposal_id, proposal_round, parent_id

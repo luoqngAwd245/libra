@@ -4,6 +4,7 @@
 use crate::{client_proxy::ClientProxy, commands::*};
 
 /// Major command for account related operations.
+/// 帐户相关操作的主要命令。
 pub struct DevCommand {}
 
 impl Command for DevCommand {
@@ -24,6 +25,7 @@ impl Command for DevCommand {
 }
 
 /// Sub command to compile move program
+/// 子命令编译移动程序
 pub struct DevCommandCompile {}
 
 impl Command for DevCommandCompile {
@@ -50,6 +52,7 @@ impl Command for DevCommandCompile {
 }
 
 /// Sub command to publish move resource
+/// 子命令发布移动资源
 pub struct DevCommandPublish {}
 
 impl Command for DevCommandPublish {
@@ -78,6 +81,7 @@ impl Command for DevCommandPublish {
 }
 
 /// Sub command to execute custom move script
+/// 子命令执行自定义移动脚本
 pub struct DevCommandExecute {}
 
 impl Command for DevCommandExecute {

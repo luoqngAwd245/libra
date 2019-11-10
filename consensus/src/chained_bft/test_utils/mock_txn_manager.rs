@@ -15,7 +15,7 @@ use std::{
 pub type MockTransaction = usize;
 
 /// Trivial mock: generates MockTransactions on the fly. Each next transaction is the next value.
-/// Trivial mock£º¶¯Ì¬Éú³ÉMockTransactions¡£ Ã¿¸öÏÂÒ»¸öÊÂÎñ¶¼ÊÇÏÂÒ»¸öÖµ¡£
+/// Trivial mockï¼šåŠ¨æ€ç”ŸæˆMockTransactionsã€‚ æ¯ä¸ªä¸‹ä¸€ä¸ªäº‹åŠ¡éƒ½æ˜¯ä¸‹ä¸€ä¸ªå€¼ã€‚
 pub struct MockTransactionManager {
     next_val: AtomicUsize,
     committed_txns: Arc<RwLock<Vec<MockTransaction>>>,
@@ -40,7 +40,7 @@ impl MockTransactionManager {
 
     /// Pulls the receiver out of the manager to let the clients receive notifications about the
     /// commits.
-    /// ½«½ÓÊÕÆ÷À­³ö¹ÜÀíÆ÷£¬ÈÃ¿Í»§¶ËÊÕµ½ÓĞ¹ØÌá½»µÄÍ¨Öª¡£
+    /// å°†æ¥æ”¶å™¨æ‹‰å‡ºç®¡ç†å™¨ï¼Œè®©å®¢æˆ·ç«¯æ”¶åˆ°æœ‰å…³æäº¤çš„é€šçŸ¥ã€‚
     pub fn take_commit_receiver(&mut self) -> mpsc::Receiver<usize> {
         self.commit_receiver
             .take()
@@ -52,7 +52,7 @@ impl TxnManager for MockTransactionManager {
     type Payload = Vec<MockTransaction>;
 
     /// The returned future is fulfilled with the vector of SignedTransactions
-    /// Ê¹ÓÃSignedTransactionsµÄÏòÁ¿À´ÊµÏÖ·µ»ØµÄÎ´À´
+    /// ä½¿ç”¨SignedTransactionsçš„å‘é‡æ¥å®ç°è¿”å›çš„æœªæ¥
     fn pull_txns(
         &self,
         max_size: u64,

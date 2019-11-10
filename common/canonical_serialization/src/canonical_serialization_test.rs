@@ -29,6 +29,14 @@ const TEST_VECTOR_1: &str = "ffffffffffffffff060000006463584d4237640000000000000
 // past which would be missed by roundtrip tests, or changes that are not backward
 // compatible in the sense that it may fail to deserialize bytes generated in the past.
 
+// 为什么我们需要测试向量？
+//
+//1.有时它有助于捕获简单的往返测试可能会遗漏的序列化和反序列化功能之间的常见错误。例如，如果共享过程
+// 中存在对两个调用进行序列化和反序列化的错误，则往返可能会错过它。
+//
+//  2.它有助于捕获代码更改，这些代码更改无意中导致了序列化格式的重大更改，这些更改与过去生成的内容
+// 不兼容，而往返测试可能会错过这些更改，或者在某种意义上说它可能无法反序列化，这些更改不向后兼容过去生成的字节。
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Addr(pub [u8; 32]);
 
@@ -251,9 +259,11 @@ fn test_vectors_1() {
     let serialized_bytes = serializer.get_output();
 
     // make sure we serialize into exact same bytes as before
+    // 确保我们序列化为与以前完全相同的字节
     assert_eq!(TEST_VECTOR_1, hex::encode(serialized_bytes));
 
     // make sure we can deserialize the test vector into expected struct
+    // 确保我们可以将测试向量反序列化为预期的结构
     let test_vector_bytes = hex::decode(TEST_VECTOR_1).unwrap();
     let deserialized_foo: Foo = SimpleDeserializer::deserialize(&test_vector_bytes).unwrap();
     assert_eq!(foo, deserialized_foo);

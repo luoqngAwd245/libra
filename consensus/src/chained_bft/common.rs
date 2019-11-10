@@ -11,15 +11,15 @@ use types::account_address::AccountAddress;
 /// The round of a block is a consensus-internal counter, which starts with 0 and increases
 /// monotonically. It is used for the protocol safety and liveness (please see the detailed
 /// protocol description).
-/// ¿éµÄÒ»ÂÖÊÇÒ»¸ö¹²Ê¶ÄÚ²¿¼ÆÊıÆ÷£¬´Ó0¿ªÊ¼²¢µ¥µ÷Ôö¼Ó¡£ ËüÓÃÓÚĞ­ÒéµÄ°²È«ĞÔºÍ»îĞÔ(Çë²ÎÔÄÏêÏ¸µÄĞ­ÒéËµÃ÷).
+/// å—çš„ä¸€è½®æ˜¯ä¸€ä¸ªå…±è¯†å†…éƒ¨è®¡æ•°å™¨ï¼Œä»0å¼€å§‹å¹¶å•è°ƒå¢åŠ ã€‚ å®ƒç”¨äºåè®®çš„å®‰å…¨æ€§å’Œæ´»æ€§(è¯·å‚é˜…è¯¦ç»†çš„åè®®è¯´æ˜).
 pub type Round = u64;
 /// Height refers to the chain depth of a consensus block in a tree with respect to parent links.
 /// The genesis block starts at height 0.  The round of a block is always >= height.  Height is
 /// only used for debugging and testing as it is not required for implementing LibraBFT.
-/// ¸ß¶ÈÊÇÖ¸Ê÷ÖĞµÄ¹²ÓĞ¿éÏà¶ÔÓÚ¸¸Á´½ÓµÄÁ´Éî¶È¡£ ³ÉÒò¿é´Ó¸ß¶È0¿ªÊ¼¡£¿éµÄÔ²×ÜÊÇ> =¸ß¶È¡£ ¸ß¶È½öÓÃÓÚµ÷ÊÔºÍ²âÊÔ£¬ÒòÎªËü²»ÊÇÊµÏÖLibraBFTËù±ØĞèµÄ¡£
+/// é«˜åº¦æ˜¯æŒ‡æ ‘ä¸­çš„å…±æœ‰å—ç›¸å¯¹äºçˆ¶é“¾æ¥çš„é“¾æ·±åº¦ã€‚ æˆå› å—ä»é«˜åº¦0å¼€å§‹ã€‚å—çš„åœ†æ€»æ˜¯> =é«˜åº¦ã€‚ é«˜åº¦ä»…ç”¨äºè°ƒè¯•å’Œæµ‹è¯•ï¼Œå› ä¸ºå®ƒä¸æ˜¯å®ç°LibraBFTæ‰€å¿…éœ€çš„ã€‚
 pub type Height = u64;
 /// Author refers to the author's account address
-/// ×÷ÕßÊÇÖ¸×÷ÕßµÄÕÊ»§µØÖ·
+/// ä½œè€…æ˜¯æŒ‡ä½œè€…çš„å¸æˆ·åœ°å€
 pub type Author = AccountAddress;
 
 /// Trait alias for the Block Payload.
